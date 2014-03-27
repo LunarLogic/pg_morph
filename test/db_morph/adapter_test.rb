@@ -11,7 +11,19 @@ class DbMorph::AdapterTest < DbMorph::UnitTest
 
   test 'add_polymorphic_foreign_key'
   test 'remove_polymorphic_foreign_key'
-  test 'create_child_table_sql'
+
+  test 'create_child_table_sql' do
+    assert_equal(%Q{
+      CREATE TABLE master_table_child_table (
+        CHECK (column_type = 'ChildTable'),
+        PRIMARY KEY (id),
+          FOREIGN KEY (column_id) REFERENCES child_table(id)
+      ) INHERITS (master_table);
+      }.squeeze(' '),
+      @adapter.create_child_table_sql(:master_table, :child_table, :column).squeeze(' ')
+    )
+  end
+
   test 'create_trigger_fun_sql'
 
   test 'create_trigger_body for new trigger' do

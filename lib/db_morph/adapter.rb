@@ -4,12 +4,11 @@ module DbMorph
     def add_polymorphic_foreign_key(from_table, to_table, options = {})
       raise_unless_postgres
 
-      child_table = "#{from_table}_#{to_table}"
       column_name = options[:column]
       raise "Column not specified" unless column_name
 
       # crete table with foreign key inheriting from original one
-      sql = create_child_table_sql(from_table, child_table, to_table, column_name)
+      sql = create_child_table_sql(from_table, to_table, column_name)
 
       # create trigger to send data to propper partition table
       sql << create_trigger_fun_sql(from_table, to_table, column_name)
@@ -32,10 +31,11 @@ module DbMorph
       execute(sql)
     end
 
-    def create_child_table_sql(from_table, child_table, to_table, column_name)
+    def create_child_table_sql(from_table, to_table, column_name)
       type = to_table.to_s.singularize.camelize
       column_name_type = "#{column_name}_type"
       column_name_id = "#{column_name}_id"
+      child_table = "#{from_table}_#{to_table}"
 
       %Q{
       CREATE TABLE #{child_table} (
