@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["hanka@lunarlogic.io"]
   spec.description   = %q{Takes care of DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
   spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.homepage      = "http://github.com/LunarLogic/pg-morph"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
@@ -19,7 +19,10 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "activerecord", ">= 3.0.0"
+  spec.add_development_dependency "activerecord", ">= 3.0.0"
+  spec.add_development_dependency "pg"
 
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "pry"
 end

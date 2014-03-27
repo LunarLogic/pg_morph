@@ -32,8 +32,6 @@ module DbMorph
       execute(sql)
     end
 
-    private
-
     def create_child_table_sql(from_table, child_table, to_table, column_name)
       type = to_table.to_s.singularize.camelize
       column_name_type = "#{column_name}_type"
