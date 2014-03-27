@@ -1,4 +1,4 @@
-require 'bundler/setup'
+require 'db_morph'
 
 require 'minitest/autorun'
 require 'minitest/pride'
