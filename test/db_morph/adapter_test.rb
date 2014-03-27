@@ -50,6 +50,19 @@ class DbMorph::AdapterTest < DbMorph::UnitTest
 
   test 'remove_partition_table'
   test 'remove_before_insert_trigger_sql'
-  test 'before_insert_trigger_content'
+  test 'before_insert_trigger_content' do
+    assert_equal(%Q{
+      CREATE OR REPLACE FUNCTION function_name() RETURNS TRIGGER AS $$
+        BEGIN
+          my block
+          ELSE
+            RAISE EXCEPTION 'Wrong \"column_type\"=\"%\" used. Create propper partition table and update function_name function', NEW.content_type;
+          END IF;
+        RETURN NEW;
+        END; $$ LANGUAGE plpgsql;
+      }.squeeze(' '),
+      @adapter.before_insert_trigger_content(:function_name, :column) { 'my block' }.squeeze(' ')
+    )
+  end
 
 end
