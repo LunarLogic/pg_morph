@@ -1,4 +1,4 @@
-module DbMorph
+module PgMorph
   module Adapter
 
     def add_polymorphic_foreign_key(from_table, to_table, options = {})

@@ -1,8 +1,8 @@
 require_relative '../test_helper'
 
-class DbMorph::AdapterTest < DbMorph::UnitTest
+class PgMorph::AdapterTest < PgMorph::UnitTest
   class FakeAdapter
-    include DbMorph::Adapter
+    include PgMorph::Adapter
   end
 
   setup do

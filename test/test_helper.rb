@@ -1,12 +1,12 @@
-require 'db_morph'
+require 'pg_morph'
 require 'pry'
 
 require 'minitest/autorun'
 require 'minitest/pride'
 
-require File.join(File.dirname(__FILE__), *%w{ .. lib db_morph })
+require File.join(File.dirname(__FILE__), *%w{ .. lib pg_morph })
 
-module DbMorph
+module PgMorph
   class UnitTest <ActiveSupport::TestCase
   end
 end

@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'db_morph/version'
+require 'pg_morph/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "db_morph"
-  spec.version       = DbMorph::VERSION
+  spec.name          = "pg_morph"
+  spec.version       = PgMorph::VERSION
   spec.authors       = ["Hanka"]
   spec.email         = ["hanka@lunarlogic.io"]
   spec.description   = %q{Takes care of DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
