@@ -1,4 +1,5 @@
 require 'pg_morph'
+require 'mocha'
 require 'pry'
 
 require 'minitest/autorun'

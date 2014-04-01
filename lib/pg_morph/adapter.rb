@@ -57,7 +57,7 @@ module PgMorph
     def create_trigger_body(from_table, to_table, column_name)
       fun_name = "#{from_table}_#{column_name}_fun"
 
-      prosrc = ActiveRecord::Base.connection.select_value("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
+      prosrc = get_function(fun_name)
 
       if prosrc
         scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
@@ -99,7 +99,7 @@ module PgMorph
       trigger_name = "#{from_table}_#{column_name}_insert_trigger"
       fun_name = "#{from_table}_#{column_name}_fun"
 
-      prosrc = ActiveRecord::Base.connection.select_value("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
+      prosrc = get_function(fun_name)
       raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
 
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
@@ -126,7 +126,7 @@ module PgMorph
           ELSE
             RAISE EXCEPTION 'Wrong "#{column_name}_type"="%" used. Create propper partition table and update #{fun_name} function', NEW.content_type;
           END IF;
-        RETURN NEW;
+        RETURN NULL;
         END; $$ LANGUAGE plpgsql;
       }
     end
@@ -135,5 +135,8 @@ module PgMorph
       raise "This functionality is supported only by PostgreSQL" unless self.is_a?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
     end
 
+    def get_function(fun_name)
+      ActiveRecord::Base.connection.select_value("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
+    end
   end
 end
