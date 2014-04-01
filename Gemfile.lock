@@ -1,12 +1,21 @@
 PATH
   remote: .
   specs:
-    pg_morph (0.0.1)
+    pg_morph (0.0.2)
       activerecord (>= 3.0.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    actionmailer (4.0.4)
+      actionpack (= 4.0.4)
+      mail (~> 2.5.4)
+    actionpack (4.0.4)
+      activesupport (= 4.0.4)
+      builder (~> 3.1.0)
+      erubis (~> 2.7.0)
+      rack (~> 1.5.2)
+      rack-test (~> 0.6.2)
     activemodel (4.0.4)
       activesupport (= 4.0.4)
       builder (~> 3.1.0)
@@ -26,32 +35,69 @@ GEM
     atomic (1.1.16)
     builder (3.1.4)
     coderay (1.1.0)
+    erubis (2.7.0)
+    hike (1.2.3)
     i18n (0.6.9)
+    mail (2.5.4)
+      mime-types (~> 1.16)
+      treetop (~> 1.4.8)
     metaclass (0.0.4)
     method_source (0.8.2)
+    mime-types (1.25.1)
     minitest (4.7.5)
     mocha (1.0.0)
       metaclass (~> 0.0.1)
     multi_json (1.9.2)
     pg (0.17.0)
+    polyglot (0.3.4)
     pry (0.9.12.6)
       coderay (~> 1.0)
       method_source (~> 0.8)
       slop (~> 3.4)
+    rack (1.5.2)
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    rails (4.0.4)
+      actionmailer (= 4.0.4)
+      actionpack (= 4.0.4)
+      activerecord (= 4.0.4)
+      activesupport (= 4.0.4)
+      bundler (>= 1.3.0, < 2.0)
+      railties (= 4.0.4)
+      sprockets-rails (~> 2.0.0)
+    railties (4.0.4)
+      actionpack (= 4.0.4)
+      activesupport (= 4.0.4)
+      rake (>= 0.8.7)
+      thor (>= 0.18.1, < 2.0)
     rake (10.2.1)
     slop (3.5.0)
+    sprockets (2.12.0)
+      hike (~> 1.2)
+      multi_json (~> 1.0)
+      rack (~> 1.0)
+      tilt (~> 1.1, != 1.3.0)
+    sprockets-rails (2.0.1)
+      actionpack (>= 3.0)
+      activesupport (>= 3.0)
+      sprockets (~> 2.8)
+    thor (0.19.1)
     thread_safe (0.3.1)
       atomic (>= 1.1.7, < 2)
+    tilt (1.4.1)
+    treetop (1.4.15)
+      polyglot
+      polyglot (>= 0.3.1)
     tzinfo (0.3.39)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord (>= 3.0.0)
   bundler (~> 1.3)
   mocha
   pg
   pg_morph!
   pry
+  rails (>= 3.0.0)
   rake

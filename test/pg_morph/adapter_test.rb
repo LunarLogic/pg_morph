@@ -48,9 +48,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     )
   end
 
-  test 'remove_partition_table' do
-
-  end
+  test 'remove_partition_table'
 
   test 'remove_before_insert_trigger_sql if no function' do
     lambda { @adapter.remove_before_insert_trigger_sql(:master_table, :child_table, :column) }
@@ -89,7 +87,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
           ELSE
             RAISE EXCEPTION 'Wrong \"column_type\"=\"%\" used. Create propper partition table and update function_name function', NEW.content_type;
           END IF;
-        RETURN NEW;
+        RETURN NULL;
         END; $$ LANGUAGE plpgsql;
       }.squeeze(' '),
       @adapter.before_insert_trigger_content(:function_name, :column) { 'my block' }.squeeze(' ')
