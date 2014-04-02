@@ -94,7 +94,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.3)
   mocha
   pg
   pg_morph!

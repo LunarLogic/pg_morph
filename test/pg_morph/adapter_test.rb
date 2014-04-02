@@ -1,13 +1,28 @@
 require_relative '../test_helper'
 
 class PgMorph::AdapterTest < PgMorph::UnitTest
+  ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
+    include PgMorph::Adapter
+  end
+
   class FakeAdapter
     include PgMorph::Adapter
+
+    def execute(sql, name = nil)
+      sql_statements << sql
+      sql
+    end
+
+    def sql_statements
+      @sql_statements || []
+    end
   end
 
   setup do
     @adapter = FakeAdapter.new
+    @connection = ActiveRecord::Base.connection
   end
+
 
   test 'add_polymorphic_foreign_key'
   test 'remove_polymorphic_foreign_key'
@@ -24,7 +39,11 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     )
   end
 
-  test 'create_trigger_fun_sql'
+  test 'create_trigger_fun_sql' do
+    @adapter.expects(:before_insert_trigger_content)
+
+    @adapter.create_trigger_fun_sql(:master_table, :to_table, :column)
+  end
 
   test 'create_trigger_body for new trigger' do
     assert_equal(%Q{
@@ -35,7 +54,15 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     )
   end
 
-  test 'create_trigger_body for existing trigger'
+  test 'create_trigger_body for existing trigger' do
+    @adapter.stubs(:raise_unless_postgres)
+    @connection.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+    assert_equal(%Q{},
+      @adapter.create_trigger_body(:likes, :posts, :likeable))
+
+    @connection.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+  end
 
   test 'create_before_insert_trigger_sql' do
     assert_equal(%Q{
