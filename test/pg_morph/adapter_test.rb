@@ -1,9 +1,6 @@
 require_relative '../test_helper'
 
 class PgMorph::AdapterTest < PgMorph::UnitTest
-  ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
-    include PgMorph::Adapter
-  end
 
   class FakeAdapter
     include PgMorph::Adapter
@@ -22,10 +19,6 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     @adapter = FakeAdapter.new
     @connection = ActiveRecord::Base.connection
   end
-
-
-  test 'add_polymorphic_foreign_key'
-  test 'remove_polymorphic_foreign_key'
 
   test 'create_child_table_sql' do
     assert_equal(%Q{
@@ -54,16 +47,6 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     )
   end
 
-  test 'create_trigger_body for existing trigger' do
-    @adapter.stubs(:raise_unless_postgres)
-    @connection.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-    assert_equal(%Q{},
-      @adapter.create_trigger_body(:likes, :posts, :likeable))
-
-    @connection.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-  end
-
   test 'create_before_insert_trigger_sql' do
     assert_equal(%Q{
       DROP TRIGGER IF EXISTS master_table_column_insert_trigger ON master_table;
@@ -74,8 +57,6 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
       @adapter.create_before_insert_trigger_sql(:master_table, :to_table, :column)
     )
   end
-
-  test 'remove_partition_table'
 
   test 'remove_before_insert_trigger_sql if no function' do
     lambda { @adapter.remove_before_insert_trigger_sql(:master_table, :child_table, :column) }
