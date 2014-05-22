@@ -1,3 +1,3 @@
 class Post < ActiveRecord::Base
-  has_many :likes
+  has_many :likes, as: :likeable
 end
