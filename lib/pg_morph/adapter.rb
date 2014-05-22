@@ -124,7 +124,7 @@ module PgMorph
         BEGIN
           #{block.call}
           ELSE
-            RAISE EXCEPTION 'Wrong "#{column_name}_type"="%" used. Create propper partition table and update #{fun_name} function', NEW.content_type;
+            RAISE EXCEPTION 'Wrong "#{column_name}_type"="%" used. Create proper partition table and update #{fun_name} function', NEW."#{column_name}"_type;
           END IF;
         RETURN NULL;
         END; $$ LANGUAGE plpgsql;
