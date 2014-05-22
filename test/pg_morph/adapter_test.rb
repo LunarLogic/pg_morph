@@ -93,7 +93,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
         BEGIN
           my block
           ELSE
-            RAISE EXCEPTION 'Wrong \"column_type\"=\"%\" used. Create propper partition table and update function_name function', NEW.content_type;
+            RAISE EXCEPTION 'Wrong \"column_type\"=\"%\" used. Create proper partition table and update function_name function', NEW.column_type;
           END IF;
         RETURN NULL;
         END; $$ LANGUAGE plpgsql;
