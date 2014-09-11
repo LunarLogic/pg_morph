@@ -136,7 +136,11 @@ module PgMorph
     end
 
     def get_function(fun_name)
-      ActiveRecord::Base.connection.select_value("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
+      run("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
+    end
+
+    def run(query)
+      ActiveRecord::Base.connection.select_value(query)
     end
   end
 end
