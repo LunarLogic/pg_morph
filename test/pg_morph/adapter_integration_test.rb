@@ -7,7 +7,6 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
 
   setup do
     @adapter = ActiveRecord::Base.connection
-    @mock = MiniTest::Mock.new
     begin
       Like.destroy_all
       Comment.destroy_all
@@ -40,9 +39,11 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     -> { @adapter.run('SELECT id FROM likes_comments') }
       .must_raise ActiveRecord::StatementInvalid
 
-    @mock.expect :create_child_table_sql, [:likes, :comments, :likeable]
-    @mock.expect :create_trigger_fun_sql, [:likes, :comments, :likeable]
-    @mock.expect :create_before_insert_trigger_sql, [:likes, :comments, :likeable]
+    assert_send [@adapter, :create_child_table_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_before_insert_trigger_fun_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_before_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_after_insert_trigger_fun_sql, :likes]
+    assert_send [@adapter, :create_after_insert_trigger_sql, :likes]
 
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
@@ -60,8 +61,8 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
     assert_equal(nil, @adapter.run('SELECT id FROM likes_comments'))
 
-    @mock.expect :remove_before_insert_trigger_sql, [:likes, :comments, :likeable]
-    @mock.expect :remove_partition_table, [:likes, :comments]
+    assert_send [@adapter, :remove_before_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :remove_partition_table, :likes, :comments]
 
     @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 

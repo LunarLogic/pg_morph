@@ -7,7 +7,7 @@ development:
   password: test123
   host: localhost
 
-test: 
+test:
   adapter: postgresql
   encoding: unicode
   database: pg_morph_test

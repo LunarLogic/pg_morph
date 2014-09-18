@@ -32,10 +32,33 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
     )
   end
 
-  test 'create_trigger_fun_sql' do
+  test 'create_before_insert_trigger_fun_sql' do
     @adapter.expects(:before_insert_trigger_content)
 
-    @adapter.create_trigger_fun_sql(:master_table, :to_table, :column)
+    @adapter.create_before_insert_trigger_fun_sql(:master_table, :to_table, :column)
+  end
+
+  test 'create_after_insert_trigger_fun_sql' do
+    assert_equal(%Q{
+      CREATE OR REPLACE FUNCTION delete_from_master_table_master_fun() RETURNS TRIGGER AS $$
+      BEGIN
+        DELETE FROM ONLY master_table WHERE id = NEW.id;
+        RETURN NEW;
+      END; $$ LANGUAGE plpgsql;
+      }.squeeze(' '),
+      @adapter.create_after_insert_trigger_fun_sql(:master_table).squeeze(' ')
+    )
+  end
+
+  test 'create_after_insert_trigger_sql' do
+    assert_equal(%Q{
+      DROP TRIGGER IF EXISTS master_table_after_insert_trigger ON master_table;
+      CREATE TRIGGER master_table_after_insert_trigger
+        AFTER INSERT ON master_table
+        FOR EACH ROW EXECUTE PROCEDURE delete_from_master_table_master_fun();
+      }.squeeze(' '),
+      @adapter.create_after_insert_trigger_sql(:master_table).squeeze(' ')
+    )
   end
 
   test 'create_trigger_body for new trigger' do
@@ -95,7 +118,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
           ELSE
             RAISE EXCEPTION 'Wrong \"column_type\"=\"%\" used. Create proper partition table and update function_name function', NEW.column_type;
           END IF;
-        RETURN NULL;
+        RETURN NEW;
         END; $$ LANGUAGE plpgsql;
       }.squeeze(' '),
       @adapter.before_insert_trigger_content(:function_name, :column) { 'my block' }.squeeze(' ')
