@@ -34,6 +34,8 @@ module PgMorph
 
       sql << remove_partition_table(from_table, to_table)
 
+      sql << remove_after_insert_trigger_sql(from_table, to_table, column_name)
+
       execute(sql)
     end
 
@@ -123,7 +125,7 @@ module PgMorph
     def remove_partition_table(from_table, to_table)
       table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{from_table}_#{to_table}").to_i.zero?
       if table_empty
-        %Q{ DROP TABLE IF EXISTS #{from_table}_#{to_table} }
+        %Q{ DROP TABLE IF EXISTS #{from_table}_#{to_table}; }
       else
         raise PG::Error.new("Partition table #{from_table}_#{to_table} contains data.\nRemove them before if you want to drop that table.\n")
       end
@@ -150,6 +152,23 @@ module PgMorph
         DROP FUNCTION #{fun_name}();
         }
       end
+    end
+
+    def remove_after_insert_trigger_sql(from_table, to_table, column_name)
+      before_insert_fun_name = "#{from_table}_#{column_name}_fun"
+
+      prosrc = get_function(before_insert_fun_name)
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      cleared = scan.reject { |x| x[0].match("#{from_table}_#{to_table}") }
+
+      return '' if cleared.present?
+      fun_name = "delete_from_#{from_table}_master_fun"
+      trigger_name = "#{from_table}_after_insert_trigger"
+
+      %Q{
+      DROP TRIGGER #{trigger_name} ON #{from_table};
+      DROP FUNCTION #{fun_name}();
+      }
     end
 
     def before_insert_trigger_content(fun_name, column_name, &block)
