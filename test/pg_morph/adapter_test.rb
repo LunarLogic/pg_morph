@@ -18,6 +18,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
   setup do
     @adapter = FakeAdapter.new
     @connection = ActiveRecord::Base.connection
+    @polymorphic = PgMorph::Polymorphic.new(:master_table, :child_table, column: :column)
   end
 
   test 'create_child_table_sql' do
@@ -28,7 +29,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
           FOREIGN KEY (column_id) REFERENCES child_table(id)
       ) INHERITS (master_table);
       }.squeeze(' '),
-      @adapter.create_child_table_sql(:master_table, :child_table, :column).squeeze(' ')
+      @adapter.create_child_table_sql(@polymorphic).squeeze(' ')
     )
   end
 

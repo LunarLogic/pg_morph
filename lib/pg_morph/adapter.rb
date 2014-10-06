@@ -1,14 +1,17 @@
 module PgMorph
+
   module Adapter
 
     def add_polymorphic_foreign_key(from_table, to_table, options = {})
       raise_unless_postgres
 
+      polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
+
       column_name = options[:column]
       raise "Column not specified" unless column_name
 
       # crete table with foreign key inheriting from original one
-      sql = create_child_table_sql(from_table, to_table, column_name)
+      sql = create_child_table_sql(polymorphic)
 
       # create before insert function to send data to propper partition table
       sql << create_before_insert_trigger_fun_sql(from_table, to_table, column_name)
@@ -39,18 +42,13 @@ module PgMorph
       execute(sql)
     end
 
-    def create_child_table_sql(from_table, to_table, column_name)
-      type = to_table.to_s.singularize.camelize
-      column_name_type = "#{column_name}_type"
-      column_name_id = "#{column_name}_id"
-      child_table = "#{from_table}_#{to_table}"
-
+    def create_child_table_sql(polymorphic)
       %Q{
-      CREATE TABLE #{child_table} (
-        CHECK (#{column_name_type} = '#{type}'),
+      CREATE TABLE #{polymorphic.child_table} (
+        CHECK (#{polymorphic.column_name_type} = '#{polymorphic.type}'),
         PRIMARY KEY (id),
-        FOREIGN KEY (#{column_name_id}) REFERENCES #{to_table}(id)
-      ) INHERITS (#{from_table});
+        FOREIGN KEY (#{polymorphic.column_name_id}) REFERENCES #{polymorphic.to_table}(id)
+      ) INHERITS (#{polymorphic.from_table});
       }
     end
 
@@ -147,10 +145,7 @@ module PgMorph
           cleared.map { |m| m[0] }.join('').strip
         end
       else
-        %Q{
-        DROP TRIGGER #{trigger_name} ON #{from_table};
-        DROP FUNCTION #{fun_name}();
-        }
+        drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
       end
     end
 
@@ -165,10 +160,7 @@ module PgMorph
       fun_name = "delete_from_#{from_table}_master_fun"
       trigger_name = "#{from_table}_after_insert_trigger"
 
-      %Q{
-      DROP TRIGGER #{trigger_name} ON #{from_table};
-      DROP FUNCTION #{fun_name}();
-      }
+      drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
     end
 
     def before_insert_trigger_content(fun_name, column_name, &block)
@@ -180,16 +172,26 @@ module PgMorph
       end
     end
 
-    def raise_unless_postgres
-      raise "This functionality is supported only by PostgreSQL" unless self.is_a?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
-    end
-
     def get_function(fun_name)
       run("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
     end
 
+    private
+
     def run(query)
       ActiveRecord::Base.connection.select_value(query)
     end
+
+    def raise_unless_postgres
+      raise "This functionality is supported only by PostgreSQL" unless self.is_a?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
+    end
+
+    def drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+      %Q{
+      DROP TRIGGER #{trigger_name} ON #{from_table};
+      DROP FUNCTION #{fun_name}();
+      }
+    end
+
   end
 end

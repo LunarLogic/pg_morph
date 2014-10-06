@@ -3,10 +3,15 @@ require_relative '../test_helper'
 class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
   ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
     include PgMorph::Adapter
+
+    def run(query)
+      ActiveRecord::Base.connection.select_value(query)
+    end
   end
 
   setup do
     @adapter = ActiveRecord::Base.connection
+    @polymorphic = PgMorph::Polymorphic.new(:likes, :comments, column: :column)
     begin
       Like.destroy_all
       Comment.destroy_all
@@ -40,7 +45,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     -> { @adapter.run('SELECT id FROM likes_comments') }
       .must_raise ActiveRecord::StatementInvalid
 
-    assert_send [@adapter, :create_child_table_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_child_table_sql, @polymorphic]
     assert_send [@adapter, :create_before_insert_trigger_fun_sql, :likes, :comments, :likeable]
     assert_send [@adapter, :create_before_insert_trigger_sql, :likes, :comments, :likeable]
     assert_send [@adapter, :create_after_insert_trigger_fun_sql, :likes]
