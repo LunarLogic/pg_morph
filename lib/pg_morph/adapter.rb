@@ -10,11 +10,11 @@ module PgMorph
       column_name = options[:column]
       raise "Column not specified" unless column_name
 
-      # crete table with foreign key inheriting from original one
+      # create table with foreign key inheriting from original one
       sql = create_child_table_sql(polymorphic)
 
-      # create before insert function to send data to propper partition table
-      sql << create_before_insert_trigger_fun_sql(from_table, to_table, column_name)
+      # create before insert function to send data to proper partition table
+      sql << create_before_insert_trigger_fun_sql(polymorphic)
 
       # create trigger before insert
       sql << create_before_insert_trigger_sql(from_table, to_table, column_name)
@@ -52,11 +52,9 @@ module PgMorph
       }
     end
 
-    def create_before_insert_trigger_fun_sql(from_table, to_table, column_name)
-      fun_name = "#{from_table}_#{column_name}_fun"
-
-      before_insert_trigger_content(fun_name, column_name) do
-        create_trigger_body(from_table, to_table, column_name).strip
+    def create_before_insert_trigger_fun_sql(polymorphic)
+      before_insert_trigger_content(polymorphic.before_insert_fun_name, polymorphic.column_name) do
+        create_trigger_body(polymorphic).strip
       end
     end
 
@@ -84,22 +82,20 @@ module PgMorph
       create_trigger_sql(from_table, trigger_name, fun_name, 'AFTER INSERT')
     end
 
-    def create_trigger_body(from_table, to_table, column_name)
-      fun_name = "#{from_table}_#{column_name}_fun"
-
-      prosrc = get_function(fun_name)
+    def create_trigger_body(polymorphic)
+      prosrc = get_function(polymorphic.before_insert_fun_name)
 
       if prosrc
         scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
         %Q{
           #{scan.map { |m| m[0] }.join.strip}
-          ELSIF (NEW.#{column_name}_type = '#{to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{from_table}_#{to_table} VALUES (NEW.*);
+          ELSIF (NEW.#{polymorphic.column_name}_type = '#{polymorphic.to_table.to_s.singularize.camelize}') THEN
+            INSERT INTO #{polymorphic.from_table}_#{polymorphic.to_table} VALUES (NEW.*);
         }
       else
         %Q{
-          IF (NEW.#{column_name}_type = '#{to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{from_table}_#{to_table} VALUES (NEW.*);
+          IF (NEW.#{polymorphic.column_name}_type = '#{polymorphic.to_table.to_s.singularize.camelize}') THEN
+            INSERT INTO #{polymorphic.from_table}_#{polymorphic.to_table} VALUES (NEW.*);
         }
       end
     end

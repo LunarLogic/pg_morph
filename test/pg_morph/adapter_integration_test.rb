@@ -11,7 +11,8 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
 
   setup do
     @adapter = ActiveRecord::Base.connection
-    @polymorphic = PgMorph::Polymorphic.new(:likes, :comments, column: :column)
+    @comments_polymorphic = PgMorph::Polymorphic.new(:likes, :comments, column: :likeable)
+    @posts_polymorphic = PgMorph::Polymorphic.new(:likes, :posts, column: :likeable)
     begin
       Like.destroy_all
       Comment.destroy_all
@@ -38,15 +39,15 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
       ELSIF (NEW.likeable_type = 'Post') THEN
         INSERT INTO likes_posts VALUES (NEW.*);
       }.squeeze(' '),
-      @adapter.create_trigger_body(:likes, :posts, :likeable).squeeze(' '))
+      @adapter.create_trigger_body(@posts_polymorphic).squeeze(' '))
   end
 
   test 'add_polymorphic_foreign_key' do
     -> { @adapter.run('SELECT id FROM likes_comments') }
       .must_raise ActiveRecord::StatementInvalid
 
-    assert_send [@adapter, :create_child_table_sql, @polymorphic]
-    assert_send [@adapter, :create_before_insert_trigger_fun_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_child_table_sql, @comments_polymorphic]
+    assert_send [@adapter, :create_before_insert_trigger_fun_sql, @comments_polymorphic]
     assert_send [@adapter, :create_before_insert_trigger_sql, :likes, :comments, :likeable]
     assert_send [@adapter, :create_after_insert_trigger_fun_sql, :likes]
     assert_send [@adapter, :create_after_insert_trigger_sql, :likes]

@@ -24,4 +24,8 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
   test '#child_table' do
     assert_equal 'foos_bars', @polymorphic.child_table
   end
+
+  test '#before_insert_fun_name' do
+    assert_equal 'foos_baz_fun', @polymorphic.before_insert_fun_name
+  end
 end

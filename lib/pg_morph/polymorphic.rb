@@ -20,6 +20,10 @@ module PgMorph
     def child_table
       "#{from_table}_#{to_table}"
     end
+
+    def before_insert_fun_name
+      "#{from_table}_#{column_name}_fun"
+    end
   end
 
 end

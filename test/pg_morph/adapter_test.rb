@@ -36,7 +36,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
   test 'create_before_insert_trigger_fun_sql' do
     @adapter.expects(:before_insert_trigger_content)
 
-    @adapter.create_before_insert_trigger_fun_sql(:master_table, :to_table, :column)
+    @adapter.create_before_insert_trigger_fun_sql(@polymorphic)
   end
 
   test 'create_after_insert_trigger_fun_sql' do
@@ -67,7 +67,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
       IF (NEW.column_type = 'ChildTable') THEN
         INSERT INTO master_table_child_table VALUES (NEW.*);
       }.squeeze(' '),
-      @adapter.create_trigger_body(:master_table, :child_table, :column).squeeze(' ')
+      @adapter.create_trigger_body(@polymorphic).squeeze(' ')
     )
   end
 
