@@ -48,7 +48,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
 
     assert_send [@adapter, :create_child_table_sql, @comments_polymorphic]
     assert_send [@adapter, :create_before_insert_trigger_fun_sql, @comments_polymorphic]
-    assert_send [@adapter, :create_before_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :create_before_insert_trigger_sql, @comments_polymorphic]
     assert_send [@adapter, :create_after_insert_trigger_fun_sql, :likes]
     assert_send [@adapter, :create_after_insert_trigger_sql, :likes]
 

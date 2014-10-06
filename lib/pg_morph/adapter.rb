@@ -17,7 +17,7 @@ module PgMorph
       sql << create_before_insert_trigger_fun_sql(polymorphic)
 
       # create trigger before insert
-      sql << create_before_insert_trigger_sql(from_table, to_table, column_name)
+      sql << create_before_insert_trigger_sql(polymorphic)
 
       # create after insert function to remove duplicates
       sql << create_after_insert_trigger_fun_sql(from_table)
@@ -100,11 +100,11 @@ module PgMorph
       end
     end
 
-    def create_before_insert_trigger_sql(from_table, to_table, column_name)
-      fun_name = "#{from_table}_#{column_name}_fun"
-      trigger_name = "#{from_table}_#{column_name}_insert_trigger"
+    def create_before_insert_trigger_sql(polymorphic)
+      fun_name = polymorphic.before_insert_fun_name
+      trigger_name = polymorphic.before_insert_trigger_name
 
-      create_trigger_sql(from_table, trigger_name, fun_name, 'BEFORE INSERT')
+      create_trigger_sql(polymorphic.from_table, trigger_name, fun_name, 'BEFORE INSERT')
     end
 
     def create_trigger_sql(from_table, trigger_name, fun_name, when_to_call)

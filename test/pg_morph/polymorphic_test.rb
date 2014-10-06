@@ -28,4 +28,8 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
   test '#before_insert_fun_name' do
     assert_equal 'foos_baz_fun', @polymorphic.before_insert_fun_name
   end
+
+  test '#before_insert_trigger_name' do
+    assert_equal 'foos_baz_insert_trigger', @polymorphic.before_insert_trigger_name
+  end
 end

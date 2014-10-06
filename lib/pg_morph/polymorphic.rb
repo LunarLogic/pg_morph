@@ -24,6 +24,10 @@ module PgMorph
     def before_insert_fun_name
       "#{from_table}_#{column_name}_fun"
     end
+
+    def before_insert_trigger_name
+      "#{from_table}_#{column_name}_insert_trigger"
+    end
   end
 
 end

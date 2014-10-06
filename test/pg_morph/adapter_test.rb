@@ -78,7 +78,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
         BEFORE INSERT ON master_table
         FOR EACH ROW EXECUTE PROCEDURE master_table_column_fun();
       },
-      @adapter.create_before_insert_trigger_sql(:master_table, :to_table, :column)
+      @adapter.create_before_insert_trigger_sql(@polymorphic)
     )
   end
 
