@@ -28,6 +28,14 @@ module PgMorph
     def before_insert_trigger_name
       "#{from_table}_#{column_name}_insert_trigger"
     end
+
+    def after_insert_fun_name
+      "delete_from_#{from_table}_master_fun"
+    end
+
+    def after_insert_trigger_name
+      "#{from_table}_after_insert_trigger"
+    end
   end
 
 end

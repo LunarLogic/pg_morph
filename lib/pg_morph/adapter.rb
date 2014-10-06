@@ -7,8 +7,7 @@ module PgMorph
 
       polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
 
-      column_name = options[:column]
-      raise "Column not specified" unless column_name
+      raise "Column not specified" unless polymorphic.column_name
 
       # create table with foreign key inheriting from original one
       sql = create_child_table_sql(polymorphic)
@@ -20,10 +19,10 @@ module PgMorph
       sql << create_before_insert_trigger_sql(polymorphic)
 
       # create after insert function to remove duplicates
-      sql << create_after_insert_trigger_fun_sql(from_table)
+      sql << create_after_insert_trigger_fun_sql(polymorphic)
 
       # create trigger after insert
-      sql << create_after_insert_trigger_sql(from_table)
+      sql << create_after_insert_trigger_sql(polymorphic)
 
       execute(sql)
     end
@@ -58,10 +57,10 @@ module PgMorph
       end
     end
 
-    def create_after_insert_trigger_fun_sql(from_table)
-      fun_name = "delete_from_#{from_table}_master_fun"
+    def create_after_insert_trigger_fun_sql(polymorphic)
+      fun_name = polymorphic.after_insert_fun_name
       create_trigger_fun(fun_name) do
-        %Q{DELETE FROM ONLY #{from_table} WHERE id = NEW.id;}
+        %Q{DELETE FROM ONLY #{polymorphic.from_table} WHERE id = NEW.id;}
       end
     end
 
@@ -75,11 +74,11 @@ module PgMorph
       }
     end
 
-    def create_after_insert_trigger_sql(from_table)
-      fun_name = "delete_from_#{from_table}_master_fun"
-      trigger_name = "#{from_table}_after_insert_trigger"
+    def create_after_insert_trigger_sql(polymorphic)
+      fun_name = polymorphic.after_insert_fun_name
+      trigger_name = polymorphic.after_insert_trigger_name
 
-      create_trigger_sql(from_table, trigger_name, fun_name, 'AFTER INSERT')
+      create_trigger_sql(polymorphic.from_table, trigger_name, fun_name, 'AFTER INSERT')
     end
 
     def create_trigger_body(polymorphic)

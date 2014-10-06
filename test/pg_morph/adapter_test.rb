@@ -47,7 +47,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
         RETURN NEW;
       END; $$ LANGUAGE plpgsql;
       }.squeeze(' '),
-      @adapter.create_after_insert_trigger_fun_sql(:master_table).squeeze(' ')
+      @adapter.create_after_insert_trigger_fun_sql(@polymorphic).squeeze(' ')
     )
   end
 
@@ -58,7 +58,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
         AFTER INSERT ON master_table
         FOR EACH ROW EXECUTE PROCEDURE delete_from_master_table_master_fun();
       }.squeeze(' '),
-      @adapter.create_after_insert_trigger_sql(:master_table).squeeze(' ')
+      @adapter.create_after_insert_trigger_sql(@polymorphic).squeeze(' ')
     )
   end
 
