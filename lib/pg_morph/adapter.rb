@@ -34,7 +34,7 @@ module PgMorph
 
       sql = remove_before_insert_trigger_sql(polymorphic)
 
-      sql << remove_partition_table(from_table, to_table)
+      sql << remove_partition_table(polymorphic)
 
       sql << remove_after_insert_trigger_sql(from_table, to_table, polymorphic.column_name)
 
@@ -115,12 +115,12 @@ module PgMorph
       }
     end
 
-    def remove_partition_table(from_table, to_table)
-      table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{from_table}_#{to_table}").to_i.zero?
+    def remove_partition_table(polymorphic)
+      table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{polymorphic.from_table}_#{polymorphic.to_table}").to_i.zero?
       if table_empty
-        %Q{ DROP TABLE IF EXISTS #{from_table}_#{to_table}; }
+        %Q{ DROP TABLE IF EXISTS #{polymorphic.child_table}; }
       else
-        raise PG::Error.new("Partition table #{from_table}_#{to_table} contains data.\nRemove them before if you want to drop that table.\n")
+        raise PG::Error.new("Partition table #{polymorphic.child_table} contains data.\nRemove them before if you want to drop that table.\n")
       end
     end
 
