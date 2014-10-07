@@ -36,7 +36,7 @@ module PgMorph
 
       sql << remove_partition_table(polymorphic)
 
-      sql << remove_after_insert_trigger_sql(from_table, to_table, polymorphic.column_name)
+      sql << remove_after_insert_trigger_sql(polymorphic)
 
       execute(sql)
     end
@@ -144,18 +144,16 @@ module PgMorph
       end
     end
 
-    def remove_after_insert_trigger_sql(from_table, to_table, column_name)
-      before_insert_fun_name = "#{from_table}_#{column_name}_fun"
-
-      prosrc = get_function(before_insert_fun_name)
+    def remove_after_insert_trigger_sql(polymorphic)
+      prosrc = get_function(polymorphic.before_insert_fun_name)
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{from_table}_#{to_table}") }
+      cleared = scan.reject { |x| x[0].match("#{polymorphic.child_table}") }
 
       return '' if cleared.present?
-      fun_name = "delete_from_#{from_table}_master_fun"
-      trigger_name = "#{from_table}_after_insert_trigger"
+      fun_name = polymorphic.after_insert_fun_name
+      trigger_name = polymorphic.after_insert_trigger_name
 
-      drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+      drop_trigger_and_fun_sql(trigger_name, polymorphic.from_table, fun_name)
     end
 
     def before_insert_trigger_content(fun_name, column_name, &block)

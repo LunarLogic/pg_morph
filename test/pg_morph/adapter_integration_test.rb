@@ -62,7 +62,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
 
     assert_send [@adapter, :remove_before_insert_trigger_sql, @comments_polymorphic]
     assert_send [@adapter, :remove_partition_table, @comments_polymorphic]
-    assert_send [@adapter, :remove_after_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :remove_after_insert_trigger_sql, @comments_polymorphic]
 
     assert_equal(%Q{ DROP TABLE IF EXISTS likes_comments; },
       @adapter.remove_partition_table(@comments_polymorphic))
@@ -75,7 +75,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
       DROP TRIGGER likes_after_insert_trigger ON likes;
       DROP FUNCTION delete_from_likes_master_fun();
       }.squeeze(' '),
-      @adapter.remove_after_insert_trigger_sql(:likes, :comments, :likeable).squeeze(' '))
+      @adapter.remove_after_insert_trigger_sql(@comments_polymorphic).squeeze(' '))
   end
 
   test 'remove_after_insert_trigger_sql with more partitions' do
@@ -84,7 +84,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
 
     assert_equal(
       '',
-      @adapter.remove_after_insert_trigger_sql(:likes, :comments, :likeable).squeeze(' '))
+      @adapter.remove_after_insert_trigger_sql(@comments_polymorphic).squeeze(' '))
   end
 
   test 'remove_polymorphic_foreign_key' do
