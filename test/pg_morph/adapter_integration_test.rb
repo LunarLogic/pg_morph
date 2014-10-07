@@ -29,28 +29,9 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     end
   end
 
-  test 'create_trigger_body for updating trigger with new partition' do
-    @adapter.stubs(:raise_unless_postgres)
-    @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-    assert_equal(%Q{
-      IF (NEW.likeable_type = 'Comment') THEN
-        INSERT INTO likes_comments VALUES (NEW.*);
-      ELSIF (NEW.likeable_type = 'Post') THEN
-        INSERT INTO likes_posts VALUES (NEW.*);
-      }.squeeze(' '),
-      @adapter.create_trigger_body(@posts_polymorphic).squeeze(' '))
-  end
-
   test 'add_polymorphic_foreign_key' do
     -> { @adapter.run('SELECT id FROM likes_comments') }
       .must_raise ActiveRecord::StatementInvalid
-
-    assert_send [@adapter, :create_child_table_sql, @comments_polymorphic]
-    assert_send [@adapter, :create_before_insert_trigger_fun_sql, @comments_polymorphic]
-    assert_send [@adapter, :create_before_insert_trigger_sql, @comments_polymorphic]
-    assert_send [@adapter, :create_after_insert_trigger_fun_sql, @comments_polymorphic]
-    assert_send [@adapter, :create_after_insert_trigger_sql, @comments_polymorphic]
 
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 

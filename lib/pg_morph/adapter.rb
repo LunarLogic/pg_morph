@@ -8,20 +8,15 @@ module PgMorph
       polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
       raise "Column not specified" unless polymorphic.column_name
 
-      # create table with foreign key inheriting from original one
-      sql = create_child_table_sql(polymorphic)
+      sql = polymorphic.create_child_table_sql
 
-      # create before insert function to send data to proper partition table
-      sql << create_before_insert_trigger_fun_sql(polymorphic)
+      sql << polymorphic.create_before_insert_trigger_fun_sql
 
-      # create trigger before insert
-      sql << create_before_insert_trigger_sql(polymorphic)
+      sql << polymorphic.create_before_insert_trigger_sql
 
-      # create after insert function to remove duplicates
-      sql << create_after_insert_trigger_fun_sql(polymorphic)
+      sql << polymorphic.create_after_insert_trigger_fun_sql
 
-      # create trigger after insert
-      sql << create_after_insert_trigger_sql(polymorphic)
+      sql << polymorphic.create_after_insert_trigger_sql
 
       execute(sql)
     end
@@ -39,80 +34,6 @@ module PgMorph
       sql << remove_after_insert_trigger_sql(polymorphic)
 
       execute(sql)
-    end
-
-    def create_child_table_sql(polymorphic)
-      %Q{
-      CREATE TABLE #{polymorphic.child_table} (
-        CHECK (#{polymorphic.column_name_type} = '#{polymorphic.type}'),
-        PRIMARY KEY (id),
-        FOREIGN KEY (#{polymorphic.column_name_id}) REFERENCES #{polymorphic.to_table}(id)
-      ) INHERITS (#{polymorphic.from_table});
-      }
-    end
-
-    def create_before_insert_trigger_fun_sql(polymorphic)
-      before_insert_trigger_content(polymorphic.before_insert_fun_name, polymorphic.column_name) do
-        create_trigger_body(polymorphic).strip
-      end
-    end
-
-    def create_after_insert_trigger_fun_sql(polymorphic)
-      fun_name = polymorphic.after_insert_fun_name
-      create_trigger_fun(fun_name) do
-        %Q{DELETE FROM ONLY #{polymorphic.from_table} WHERE id = NEW.id;}
-      end
-    end
-
-    def create_trigger_fun(fun_name, &block)
-      %Q{
-        CREATE OR REPLACE FUNCTION #{fun_name}() RETURNS TRIGGER AS $$
-        BEGIN
-          #{block.call}
-          RETURN NEW;
-        END; $$ LANGUAGE plpgsql;
-      }
-    end
-
-    def create_after_insert_trigger_sql(polymorphic)
-      fun_name = polymorphic.after_insert_fun_name
-      trigger_name = polymorphic.after_insert_trigger_name
-
-      create_trigger_sql(polymorphic.from_table, trigger_name, fun_name, 'AFTER INSERT')
-    end
-
-    def create_trigger_body(polymorphic)
-      prosrc = get_function(polymorphic.before_insert_fun_name)
-
-      if prosrc
-        scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-        %Q{
-          #{scan.map { |m| m[0] }.join.strip}
-          ELSIF (NEW.#{polymorphic.column_name}_type = '#{polymorphic.to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{polymorphic.from_table}_#{polymorphic.to_table} VALUES (NEW.*);
-        }
-      else
-        %Q{
-          IF (NEW.#{polymorphic.column_name}_type = '#{polymorphic.to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{polymorphic.from_table}_#{polymorphic.to_table} VALUES (NEW.*);
-        }
-      end
-    end
-
-    def create_before_insert_trigger_sql(polymorphic)
-      fun_name = polymorphic.before_insert_fun_name
-      trigger_name = polymorphic.before_insert_trigger_name
-
-      create_trigger_sql(polymorphic.from_table, trigger_name, fun_name, 'BEFORE INSERT')
-    end
-
-    def create_trigger_sql(from_table, trigger_name, fun_name, when_to_call)
-      %Q{
-      DROP TRIGGER IF EXISTS #{trigger_name} ON #{from_table};
-      CREATE TRIGGER #{trigger_name}
-        #{when_to_call} ON #{from_table}
-        FOR EACH ROW EXECUTE PROCEDURE #{fun_name}();
-      }
     end
 
     def remove_partition_table(polymorphic)
@@ -136,7 +57,7 @@ module PgMorph
 
       if cleared.present?
         cleared[0][0].sub!('ELSIF', 'IF')
-        before_insert_trigger_content(fun_name, polymorphic.column_name) do
+        polymorphic.before_insert_trigger_content do
           cleared.map { |m| m[0] }.join('').strip
         end
       else
@@ -154,15 +75,6 @@ module PgMorph
       trigger_name = polymorphic.after_insert_trigger_name
 
       drop_trigger_and_fun_sql(trigger_name, polymorphic.from_table, fun_name)
-    end
-
-    def before_insert_trigger_content(fun_name, column_name, &block)
-      create_trigger_fun(fun_name) do
-        %Q{#{block.call}
-          ELSE
-            RAISE EXCEPTION 'Wrong "#{column_name}_type"="%" used. Create proper partition table and update #{fun_name} function', NEW.#{column_name}_type;
-          END IF;}
-      end
     end
 
     def get_function(fun_name)
