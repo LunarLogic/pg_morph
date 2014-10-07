@@ -6,7 +6,6 @@ module PgMorph
       raise_unless_postgres
 
       polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
-
       raise "Column not specified" unless polymorphic.column_name
 
       # create table with foreign key inheriting from original one
@@ -30,13 +29,14 @@ module PgMorph
     def remove_polymorphic_foreign_key(from_table, to_table, options = {})
       raise_unless_postgres
 
-      column_name = options[:column]
+      polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
+      raise "Column not specified" unless polymorphic.column_name
 
-      sql = remove_before_insert_trigger_sql(from_table, to_table, column_name)
+      sql = remove_before_insert_trigger_sql(polymorphic)
 
       sql << remove_partition_table(from_table, to_table)
 
-      sql << remove_after_insert_trigger_sql(from_table, to_table, column_name)
+      sql << remove_after_insert_trigger_sql(from_table, to_table, polymorphic.column_name)
 
       execute(sql)
     end
@@ -124,23 +124,23 @@ module PgMorph
       end
     end
 
-    def remove_before_insert_trigger_sql(from_table, to_table, column_name)
-      trigger_name = "#{from_table}_#{column_name}_insert_trigger"
-      fun_name = "#{from_table}_#{column_name}_fun"
+    def remove_before_insert_trigger_sql(polymorphic)
+      trigger_name = polymorphic.before_insert_trigger_name
+      fun_name = polymorphic.before_insert_fun_name
 
       prosrc = get_function(fun_name)
       raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
 
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{from_table}_#{to_table}") }
+      cleared = scan.reject { |x| x[0].match("#{polymorphic.child_table}") }
 
       if cleared.present?
         cleared[0][0].sub!('ELSIF', 'IF')
-        before_insert_trigger_content(fun_name, column_name) do
+        before_insert_trigger_content(fun_name, polymorphic.column_name) do
           cleared.map { |m| m[0] }.join('').strip
         end
       else
-        drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+        drop_trigger_and_fun_sql(trigger_name, polymorphic.from_table, fun_name)
       end
     end
 

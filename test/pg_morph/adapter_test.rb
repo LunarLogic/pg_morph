@@ -83,7 +83,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
   end
 
   test 'remove_before_insert_trigger_sql if no function' do
-    lambda { @adapter.remove_before_insert_trigger_sql(:master_table, :child_table, :column) }
+    lambda { @adapter.remove_before_insert_trigger_sql(@polymorphic) }
       .must_raise PG::Error
   end
 
@@ -94,7 +94,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
       DROP TRIGGER master_table_column_insert_trigger ON master_table;
       DROP FUNCTION master_table_column_fun();
       }.squeeze(' '),
-      @adapter.remove_before_insert_trigger_sql(:master_table, :child_table, :column).squeeze(' ')
+      @adapter.remove_before_insert_trigger_sql(@polymorphic).squeeze(' ')
     )
   end
 
@@ -106,7 +106,7 @@ class PgMorph::AdapterTest < PgMorph::UnitTest
       DROP TRIGGER master_table_column_insert_trigger ON master_table;
       DROP FUNCTION master_table_column_fun();
       }.squeeze(' '),
-      @adapter.remove_before_insert_trigger_sql(:master_table, :child_table, :column).squeeze(' ')
+      @adapter.remove_before_insert_trigger_sql(@polymorphic).squeeze(' ')
     )
 
   end

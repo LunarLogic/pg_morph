@@ -60,7 +60,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
   test 'remove_partition_table' do
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-    assert_send [@adapter, :remove_before_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :remove_before_insert_trigger_sql, @comments_polymorphic]
     assert_send [@adapter, :remove_partition_table, :likes, :comments]
     assert_send [@adapter, :remove_after_insert_trigger_sql, :likes, :comments, :likeable]
 
@@ -91,7 +91,7 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
     assert_equal(nil, @adapter.run('SELECT id FROM likes_comments'))
 
-    assert_send [@adapter, :remove_before_insert_trigger_sql, :likes, :comments, :likeable]
+    assert_send [@adapter, :remove_before_insert_trigger_sql, @comments_polymorphic]
     assert_send [@adapter, :remove_partition_table, :likes, :comments]
 
     @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
