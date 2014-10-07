@@ -30,20 +30,12 @@ module PgMorph
       execute(sql)
     end
 
-
-    def get_function(fun_name)
-      run("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
-    end
-
     private
 
-    def run(query)
-      ActiveRecord::Base.connection.select_value(query)
-    end
-
     def raise_unless_postgres
-      raise "This functionality is supported only by PostgreSQL" unless self.is_a?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
+      raise PgMorph::Exception.new("This functionality is supported only by PostgreSQL") unless self.is_a?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
     end
 
   end
+
 end
