@@ -105,4 +105,20 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
       @polymorphic.create_after_insert_trigger_sql.squeeze(' ')
     )
   end
+
+  test 'remove_before_insert_trigger_sql if no function' do
+    lambda { @polymorphic.remove_before_insert_trigger_sql }
+      .must_raise PG::Error
+  end
+
+  test 'remove_before_insert_trigger_sql for single child table' do
+    @polymorphic.stubs(:get_function).with('foos_baz_fun').returns('')
+
+    assert_equal(%Q{
+      DROP TRIGGER foos_baz_insert_trigger ON foos;
+      DROP FUNCTION foos_baz_fun();
+      }.squeeze(' '),
+      @polymorphic.remove_before_insert_trigger_sql.squeeze(' ')
+    )
+  end
 end

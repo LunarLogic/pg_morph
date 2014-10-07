@@ -38,42 +38,9 @@ class PgMorph::AdapterIntegrationTest < PgMorph::UnitTest
     assert_equal(nil, @adapter.run('SELECT id FROM likes_comments'))
   end
 
-  test 'remove_partition_table' do
-    @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-    assert_send [@adapter, :remove_before_insert_trigger_sql, @comments_polymorphic]
-    assert_send [@adapter, :remove_partition_table, @comments_polymorphic]
-    assert_send [@adapter, :remove_after_insert_trigger_sql, @comments_polymorphic]
-
-    assert_equal(%Q{ DROP TABLE IF EXISTS likes_comments; },
-      @adapter.remove_partition_table(@comments_polymorphic))
-  end
-
-  test 'remove_after_insert_trigger_sql' do
-    @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-    assert_equal(%Q{
-      DROP TRIGGER likes_after_insert_trigger ON likes;
-      DROP FUNCTION delete_from_likes_master_fun();
-      }.squeeze(' '),
-      @adapter.remove_after_insert_trigger_sql(@comments_polymorphic).squeeze(' '))
-  end
-
-  test 'remove_after_insert_trigger_sql with more partitions' do
-    @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-    @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
-
-    assert_equal(
-      '',
-      @adapter.remove_after_insert_trigger_sql(@comments_polymorphic).squeeze(' '))
-  end
-
   test 'remove_polymorphic_foreign_key' do
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
     assert_equal(nil, @adapter.run('SELECT id FROM likes_comments'))
-
-    assert_send [@adapter, :remove_before_insert_trigger_sql, @comments_polymorphic]
-    assert_send [@adapter, :remove_partition_table, @comments_polymorphic]
 
     @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 

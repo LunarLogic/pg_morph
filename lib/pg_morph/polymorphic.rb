@@ -123,6 +123,54 @@ module PgMorph
       end
     end
 
+    def remove_before_insert_trigger_sql
+      trigger_name = before_insert_trigger_name
+      fun_name = before_insert_fun_name
+
+      prosrc = get_function(fun_name)
+      raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
+
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      cleared = scan.reject { |x| x[0].match("#{child_table}") }
+
+      if cleared.present?
+        cleared[0][0].sub!('ELSIF', 'IF')
+        before_insert_trigger_content do
+          cleared.map { |m| m[0] }.join('').strip
+        end
+      else
+        drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+      end
+    end
+
+    def drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+      %Q{
+      DROP TRIGGER #{trigger_name} ON #{from_table};
+      DROP FUNCTION #{fun_name}();
+      }
+    end
+
+    def remove_partition_table
+      table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{from_table}_#{to_table}").to_i.zero?
+      if table_empty
+        %Q{ DROP TABLE IF EXISTS #{child_table}; }
+      else
+        raise PG::Error.new("Partition table #{child_table} contains data.\nRemove them before if you want to drop that table.\n")
+      end
+    end
+
+    def remove_after_insert_trigger_sql
+      prosrc = get_function(before_insert_fun_name)
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      cleared = scan.reject { |x| x[0].match("#{child_table}") }
+
+      return '' if cleared.present?
+      fun_name = after_insert_fun_name
+      trigger_name = after_insert_trigger_name
+
+      drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+    end
+
     def get_function(fun_name)
       run("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
     end
