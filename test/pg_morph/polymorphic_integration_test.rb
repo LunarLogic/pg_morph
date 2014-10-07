@@ -27,7 +27,7 @@ class PgMorph::PolymorphicIntegrationTest < PgMorph::UnitTest
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
     -> { @comments_polymorphic.create_trigger_body }
-      .must_raise RuntimeError
+      .must_raise PG::Error
   end
 
   test 'create_trigger_body for updating trigger with new partition' do

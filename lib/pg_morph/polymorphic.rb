@@ -77,9 +77,7 @@ module PgMorph
 
       if prosrc
         scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-        if scan[0][0].match child_table
-          raise "Condition for #{child_table} table already exists in trigger function"
-        end
+        raise PG::Error.new("Condition for #{child_table} table already exists in trigger function") if scan[0][0].match child_table
         %Q{
           #{scan.map { |m| m[0] }.join.strip}
           ELSIF (NEW.#{column_name}_type = '#{to_table.to_s.singularize.camelize}') THEN
@@ -174,8 +172,6 @@ module PgMorph
     def get_function(fun_name)
       run("SELECT prosrc FROM pg_proc WHERE proname = '#{fun_name}'")
     end
-
-    private
 
     def run(query)
       ActiveRecord::Base.connection.select_value(query)

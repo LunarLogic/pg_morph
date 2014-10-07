@@ -6,7 +6,7 @@ module PgMorph
       raise_unless_postgres
 
       polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
-      raise "Column not specified" unless polymorphic.column_name
+      raise PgMorph::Exception.new("Column not specified") unless polymorphic.column_name
 
       sql = polymorphic.create_child_table_sql
       sql << polymorphic.create_before_insert_trigger_fun_sql
@@ -21,7 +21,7 @@ module PgMorph
       raise_unless_postgres
 
       polymorphic = PgMorph::Polymorphic.new(from_table, to_table, options)
-      raise "Column not specified" unless polymorphic.column_name
+      raise PgMorph::Exception.new("Column not specified") unless polymorphic.column_name
 
       sql = polymorphic.remove_before_insert_trigger_sql
       sql << polymorphic.remove_partition_table
