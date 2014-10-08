@@ -6,7 +6,7 @@ PgMorph gives you a way to handle DB consistency for polymorphic relations and i
 
 Add this line to your application's Gemfile:
 
-    gem 'pg_morph'h
+    gem 'pg_morph'
 
 And then execute:
 
@@ -18,15 +18,15 @@ Or install it yourself as:
 
 ## Usage
 
-Let's say you have a Like class and it's in polymorphic relation with Post and Comment classes. You can't add foreign keys for those relations, and there's where PgMorph comes.
+Let's say you have a `Like` class and it's in polymorphic relation with `Post` and `Comment` classes. You can't add foreign keys for those relations, and there's where PgMorph comes.
 
 By adding migration:
 
     add_polymorphic_foreign_key :likes, :comments, column: :likeable
 
-PgMorph creates a partition table named `likes_comments` which inherits from `likes` table and sets foreign key on it and redirects all inserts to `likes` to this partition table. It's done by using before insert trigger.
+PgMorph creates a partition table named `likes_comments` which inherits from `likes` table, sets foreign key on it and redirects all inserts to `likes` to this partition table if `likeable_type` is `Like`. It's done by using before insert trigger.
 
-You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partition.
+You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partitions.
 
 From the Rails point of view it's totally transparent, so all inserts, updates and selections work as they were on original `likes` table.
 
