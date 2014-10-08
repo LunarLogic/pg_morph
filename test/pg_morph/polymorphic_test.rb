@@ -64,7 +64,7 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
       IF (NEW.baz_type = 'Bar') THEN
         INSERT INTO foos_bars VALUES (NEW.*);
       }.squeeze(' '),
-      @polymorphic.create_trigger_body.squeeze(' ')
+      @polymorphic.send(:create_trigger_body).squeeze(' ')
     )
   end
 
@@ -79,7 +79,7 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
         RETURN NEW;
         END; $$ LANGUAGE plpgsql;
       }.squeeze(' '),
-      @polymorphic.before_insert_trigger_content { 'my block' }.squeeze(' ')
+      @polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ')
     )
   end
 

@@ -26,7 +26,7 @@ class PgMorph::PolymorphicIntegrationTest < PgMorph::UnitTest
     @adapter.stubs(:raise_unless_postgres)
     @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-    -> { @comments_polymorphic.create_trigger_body }
+    -> { @comments_polymorphic.send(:create_trigger_body) }
       .must_raise PG::Error
   end
 
@@ -40,7 +40,7 @@ class PgMorph::PolymorphicIntegrationTest < PgMorph::UnitTest
       ELSIF (NEW.likeable_type = 'Post') THEN
         INSERT INTO likes_posts VALUES (NEW.*);
       }.squeeze(' '),
-      @posts_polymorphic.create_trigger_body.squeeze(' '))
+      @posts_polymorphic.send(:create_trigger_body).squeeze(' '))
   end
 
   test 'create_before_insert_trigger_sql' do
