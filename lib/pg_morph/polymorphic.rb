@@ -2,23 +2,23 @@ module PgMorph
 
   class Polymorphic
     include PgMorph::Naming
-    attr_reader :from_table, :to_table, :column_name
+    attr_reader :parent_table, :child_table, :column_name
 
-    def initialize(from_table, to_table, options)
-      @from_table = from_table
-      @to_table = to_table
+    def initialize(parent_table, child_table, options)
+      @parent_table = parent_table
+      @child_table = child_table
       @column_name = options[:column]
 
       raise PgMorph::Exception.new("Column not specified") unless @column_name
     end
 
-    def create_child_table_sql
+    def create_proxy_table_sql
       %Q{
-      CREATE TABLE #{child_table} (
+      CREATE TABLE #{proxy_table} (
         CHECK (#{column_name_type} = '#{type}'),
         PRIMARY KEY (id),
-        FOREIGN KEY (#{column_name_id}) REFERENCES #{to_table}(id)
-      ) INHERITS (#{from_table});
+        FOREIGN KEY (#{column_name_id}) REFERENCES #{child_table}(id)
+      ) INHERITS (#{parent_table});
       }
     end
 
@@ -32,20 +32,20 @@ module PgMorph
       fun_name = before_insert_fun_name
       trigger_name = before_insert_trigger_name
 
-      create_trigger_sql(from_table, trigger_name, fun_name, 'BEFORE INSERT')
+      create_trigger_sql(parent_table, trigger_name, fun_name, 'BEFORE INSERT')
     end
 
     def create_after_insert_trigger_sql
       fun_name = after_insert_fun_name
       trigger_name = after_insert_trigger_name
 
-      create_trigger_sql(from_table, trigger_name, fun_name, 'AFTER INSERT')
+      create_trigger_sql(parent_table, trigger_name, fun_name, 'AFTER INSERT')
     end
 
     def create_after_insert_trigger_fun_sql
       fun_name = after_insert_fun_name
       create_trigger_fun(fun_name) do
-        %Q{DELETE FROM ONLY #{from_table} WHERE id = NEW.id;}
+        %Q{DELETE FROM ONLY #{parent_table} WHERE id = NEW.id;}
       end
     end
 
@@ -57,7 +57,7 @@ module PgMorph
       raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
 
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{child_table}") }
+      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
 
       if cleared.present?
         cleared[0][0].sub!('ELSIF', 'IF')
@@ -65,29 +65,29 @@ module PgMorph
           cleared.map { |m| m[0] }.join('').strip
         end
       else
-        drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+        drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
       end
     end
 
     def remove_partition_table
-      table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{from_table}_#{to_table}").to_i.zero?
+      table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{parent_table}_#{child_table}").to_i.zero?
       if table_empty
-        %Q{ DROP TABLE IF EXISTS #{child_table}; }
+        %Q{ DROP TABLE IF EXISTS #{proxy_table}; }
       else
-        raise PG::Error.new("Partition table #{child_table} contains data.\nRemove them before if you want to drop that table.\n")
+        raise PG::Error.new("Partition table #{proxy_table} contains data.\nRemove them before if you want to drop that table.\n")
       end
     end
 
     def remove_after_insert_trigger_sql
       prosrc = get_function(before_insert_fun_name)
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{child_table}") }
+      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
 
       return '' if cleared.present?
       fun_name = after_insert_fun_name
       trigger_name = after_insert_trigger_name
 
-      drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+      drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
     end
 
     private
@@ -116,32 +116,32 @@ module PgMorph
 
       if prosrc
         scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-        raise PG::Error.new("Condition for #{child_table} table already exists in trigger function") if scan[0][0].match child_table
+        raise PG::Error.new("Condition for #{proxy_table} table already exists in trigger function") if scan[0][0].match proxy_table
         %Q{
           #{scan.map { |m| m[0] }.join.strip}
-          ELSIF (NEW.#{column_name}_type = '#{to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{from_table}_#{to_table} VALUES (NEW.*);
+          ELSIF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
         }
       else
         %Q{
-          IF (NEW.#{column_name}_type = '#{to_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{from_table}_#{to_table} VALUES (NEW.*);
+          IF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
         }
       end
     end
 
-    def create_trigger_sql(from_table, trigger_name, fun_name, when_to_call)
+    def create_trigger_sql(parent_table, trigger_name, fun_name, when_to_call)
       %Q{
-      DROP TRIGGER IF EXISTS #{trigger_name} ON #{from_table};
+      DROP TRIGGER IF EXISTS #{trigger_name} ON #{parent_table};
       CREATE TRIGGER #{trigger_name}
-        #{when_to_call} ON #{from_table}
+        #{when_to_call} ON #{parent_table}
         FOR EACH ROW EXECUTE PROCEDURE #{fun_name}();
       }
     end
 
-    def drop_trigger_and_fun_sql(trigger_name, from_table, fun_name)
+    def drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
       %Q{
-      DROP TRIGGER #{trigger_name} ON #{from_table};
+      DROP TRIGGER #{trigger_name} ON #{parent_table};
       DROP FUNCTION #{fun_name}();
       }
     end

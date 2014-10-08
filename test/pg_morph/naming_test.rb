@@ -1,7 +1,7 @@
 require_relative '../test_helper'
 
 class PgMorph::NamingTest < PgMorph::UnitTest
-  Fake = Struct.new(:from_table, :to_table, :column_name) do
+  Fake = Struct.new(:parent_table, :child_table, :column_name) do
     include PgMorph::Naming
   end
 
@@ -21,8 +21,8 @@ class PgMorph::NamingTest < PgMorph::UnitTest
     assert_equal 'baz_id', @fake.column_name_id
   end
 
-  test '#child_table' do
-    assert_equal 'foos_bars', @fake.child_table
+  test '#proxy_table' do
+    assert_equal 'foos_bars', @fake.proxy_table
   end
 
   test '#before_insert_fun_name' do

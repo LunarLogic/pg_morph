@@ -9,15 +9,15 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
     assert_equal :baz, @polymorphic.column_name
   end
 
-  test '#from_table' do
-    assert_equal :foos, @polymorphic.from_table
+  test '#parent_table' do
+    assert_equal :foos, @polymorphic.parent_table
   end
 
-  test '#to_table' do
-    assert_equal :bars, @polymorphic.to_table
+  test '#child_table' do
+    assert_equal :bars, @polymorphic.child_table
   end
 
-  test '#create_child_table_sql' do
+  test '#create_proxy_table_sql' do
     assert_equal(%Q{
       CREATE TABLE foos_bars (
         CHECK (baz_type = 'Bar'),
@@ -25,7 +25,7 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
           FOREIGN KEY (baz_id) REFERENCES bars(id)
       ) INHERITS (foos);
       }.squeeze(' '),
-      @polymorphic.create_child_table_sql.squeeze(' ')
+      @polymorphic.create_proxy_table_sql.squeeze(' ')
     )
   end
 
