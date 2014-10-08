@@ -1,40 +1,15 @@
 module PgMorph
 
-  Polymorphic = Struct.new(:from_table, :to_table, :options) do
-    def column_name
-      options[:column]
-    end
+  class Polymorphic
+    include PgMorph::Naming
+    attr_reader :from_table, :to_table, :column_name
 
-    def type
-      to_table.to_s.singularize.camelize
-    end
+    def initialize(from_table, to_table, options)
+      @from_table = from_table
+      @to_table = to_table
+      @column_name = options[:column]
 
-    def column_name_type
-      "#{column_name}_type"
-    end
-
-    def column_name_id
-      "#{column_name}_id"
-    end
-
-    def child_table
-      "#{from_table}_#{to_table}"
-    end
-
-    def before_insert_fun_name
-      "#{from_table}_#{column_name}_fun"
-    end
-
-    def before_insert_trigger_name
-      "#{from_table}_#{column_name}_insert_trigger"
-    end
-
-    def after_insert_fun_name
-      "delete_from_#{from_table}_master_fun"
-    end
-
-    def after_insert_trigger_name
-      "#{from_table}_after_insert_trigger"
+      raise PgMorph::Exception.new("Column not specified") unless @column_name
     end
 
     def create_child_table_sql

@@ -9,36 +9,12 @@ class PgMorph::PolymorphicTest < PgMorph::UnitTest
     assert_equal :baz, @polymorphic.column_name
   end
 
-  test '#type' do
-    assert_equal 'Bar', @polymorphic.type
+  test '#from_table' do
+    assert_equal :foos, @polymorphic.from_table
   end
 
-  test '#column_name_type' do
-    assert_equal 'baz_type', @polymorphic.column_name_type
-  end
-
-  test '#column_name_id' do
-    assert_equal 'baz_id', @polymorphic.column_name_id
-  end
-
-  test '#child_table' do
-    assert_equal 'foos_bars', @polymorphic.child_table
-  end
-
-  test '#before_insert_fun_name' do
-    assert_equal 'foos_baz_fun', @polymorphic.before_insert_fun_name
-  end
-
-  test '#before_insert_trigger_name' do
-    assert_equal 'foos_baz_insert_trigger', @polymorphic.before_insert_trigger_name
-  end
-
-  test '#after_insert_fun_name' do
-    assert_equal 'delete_from_foos_master_fun', @polymorphic.after_insert_fun_name
-  end
-
-  test '#after_insert_trigger_name' do
-    assert_equal 'foos_after_insert_trigger', @polymorphic.after_insert_trigger_name
+  test '#to_table' do
+    assert_equal :bars, @polymorphic.to_table
   end
 
   test '#create_child_table_sql' do
