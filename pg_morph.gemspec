@@ -8,8 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = PgMorph::VERSION
   spec.authors       = ["Hanka"]
   spec.email         = ["hanka@lunarlogic.io"]
-  spec.description   = %q{Takes care of DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.summary       = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
   spec.homepage      = "http://github.com/LunarLogic/pg-morph"
   spec.license       = "MIT"
 

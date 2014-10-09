@@ -32,13 +32,14 @@ From the Rails point of view it's totally transparent, so all inserts, updates a
 
 You can remove polymorphic foreign keys with below migration:
 
-    remove_polymorphic_foreign_key :likes, comments, column: :likeable
+    remove_polymorphic_foreign_key :likes, :comments, column: :likeable
 
 Because it means that whole partition table would be removed, you will be forbidden to do that if partition table contains any data.
 
 ## Issues
 
 ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep while while using regular tables without some trick. In ideal situation there should be inly one insert to partition table, omitting main table, but than `id` of newly created record would become `nil` which would frustrate most of us. To preserve `id` of new record main table is not omitted, two records are being made and in after insert trigger duplicated record from master table is removed.
+
 This extra database operations may be skipped by using view for main table, however it requires more work to make it so transparent for ActiveRecord as it is now, and is going to be done in next release.
 
 ## Contributing
