@@ -1,3 +1,5 @@
+ENV["RAILS_ENV"] = 'test'
+
 require 'pg_morph'
 require 'active_record/connection_adapters/postgresql_adapter'
 require 'dummy/config/environment'

@@ -1,3 +1,4 @@
 test/dummy/log
+test/dummy/config/*.yml
 tags
 

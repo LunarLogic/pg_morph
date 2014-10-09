@@ -6,7 +6,7 @@ require 'pg_morph/version'
 Gem::Specification.new do |spec|
   spec.name          = "pg_morph"
   spec.version       = PgMorph::VERSION
-  spec.authors       = ["Hanka"]
+  spec.authors       = ["Hanka Seweryn"]
   spec.email         = ["hanka@lunarlogic.io"]
   spec.summary       = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
   spec.homepage      = "http://github.com/LunarLogic/pg-morph"
