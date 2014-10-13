@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["hanka@lunarlogic.io"]
   spec.summary       = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations}
   spec.description   = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
-  spec.homepage      = "http://github.com/LunarLogic/pg-morph"
+  spec.homepage      = "https://github.com/LunarLogic/pg_morph"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
