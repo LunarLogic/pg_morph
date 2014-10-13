@@ -6,15 +6,21 @@ PgMorph gives you a way to handle DB consistency for polymorphic relations and i
 
 Add this line to your application's Gemfile:
 
-    gem 'pg_morph'
+```ruby
+gem 'pg_morph'
+```
 
 And then execute:
 
-    $ bundle
+```console
+$ bundle
+```
 
 Or install it yourself as:
 
-    $ gem install pg_morph
+```console
+$ gem install pg_morph
+```
 
 ## Usage
 
@@ -22,7 +28,9 @@ Let's say you have a `Like` class and it's in polymorphic relation with `Post` a
 
 By adding migration:
 
-    add_polymorphic_foreign_key :likes, :comments, column: :likeable
+```ruby
+add_polymorphic_foreign_key :likes, :comments, column: :likeable
+```
 
 PgMorph creates a partition table named `likes_comments` which inherits from `likes` table, sets foreign key on it and redirects all inserts to `likes` to this partition table if `likeable_type` is `Like`. It's done by using before insert trigger.
 
@@ -32,7 +40,9 @@ From the Rails point of view it's totally transparent, so all inserts, updates a
 
 You can remove polymorphic foreign keys with below migration:
 
-    remove_polymorphic_foreign_key :likes, :comments, column: :likeable
+```ruby
+remove_polymorphic_foreign_key :likes, :comments, column: :likeable
+```
 
 Because it means that whole partition table would be removed, you will be forbidden to do that if partition table contains any data.
 
