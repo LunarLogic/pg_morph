@@ -8,7 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = PgMorph::VERSION
   spec.authors       = ["Hanka Seweryn"]
   spec.email         = ["hanka@lunarlogic.io"]
-  spec.summary       = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
+  spec.summary       = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations}
+  spec.description   = %q{Takes care of postgres DB consistency for ActiveRecord polymorphic associations via partitioning and inheritance}
   spec.homepage      = "http://github.com/LunarLogic/pg-morph"
   spec.license       = "MIT"
 
@@ -17,14 +18,14 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "activerecord", ">= 3.0.0"
+  spec.add_dependency "activerecord", "~> 3"
 
-  spec.add_development_dependency "rails", ">= 3.0.0"
-  spec.add_development_dependency "pg"
-  spec.add_development_dependency "mocha"
+  spec.add_development_dependency "rails", "~> 3"
+  spec.add_development_dependency "pg", "~> 0.17"
+  spec.add_development_dependency "mocha", "~> 1.1"
 
-  spec.add_development_dependency "rake"
-  spec.add_development_dependency "pry"
-  spec.add_development_dependency "colored"
-  spec.add_development_dependency "awesome_print"
+  spec.add_development_dependency "rake", "~> 10.3"
+  spec.add_development_dependency "pry", "~> 0.10"
+  spec.add_development_dependency "colored", "~> 1.2"
+  spec.add_development_dependency "awesome_print", "~> 1.2"
 end
