@@ -1,4 +1,5 @@
 # PgMorph
+# ![PgMorph logo](docs/pg_morph.png)
 
 PgMorph gives you a way to handle DB consistency for polymorphic relations and is based on postgreSQL inheritance and partitioning features.
 
