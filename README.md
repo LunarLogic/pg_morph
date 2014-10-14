@@ -51,7 +51,9 @@ Because it means that whole partition table would be removed, you will be forbid
 
 ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep while while using regular tables without some trick. In ideal situation there should be inly one insert to partition table, omitting main table, but than `id` of newly created record would become `nil` which would frustrate most of us. To preserve `id` of new record main table is not omitted, two records are being made and in after insert trigger duplicated record from master table is removed.
 
-This extra database operations may be skipped by using view for main table, however it requires more work to make it so transparent for ActiveRecord as it is now, and is going to be done in next release.
+## Development plan
+
+To avoid extra database operations with deleting duplicated records view of main table is going to be used. Possibly at the begining it won't be as transparent for ActiveRecord as it is now, but this change is important from the point of view of database optimization.
 
 ## Contributing
 
