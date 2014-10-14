@@ -22,10 +22,10 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "rails", "~> 3"
   spec.add_development_dependency "pg", "~> 0.17"
-  spec.add_development_dependency "mocha", "~> 1.1"
+
+  spec.add_development_dependency 'rspec-rails'
 
   spec.add_development_dependency "rake", "~> 10.3"
   spec.add_development_dependency "pry", "~> 0.10"
-  spec.add_development_dependency "colored", "~> 1.2"
   spec.add_development_dependency "awesome_print", "~> 1.2"
 end

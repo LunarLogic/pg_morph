@@ -1,4 +1,4 @@
-test/dummy/log
-test/dummy/config/*.yml
+spec/dummy/log
+spec/dummy/config/*.yml
 tags
 *.gem
