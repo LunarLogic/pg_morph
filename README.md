@@ -53,7 +53,7 @@ ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep w
 
 ## Development plan
 
-To avoid extra database operations with deleting duplicated records view of main table is going to be used. Possibly at the begining it won't be as transparent for ActiveRecord as it is now, but this change is important from the point of view of database optimization.
+To avoid extra database operations with deleting duplicated records view of main table is going to be used. Possibly at the beginning it won't be as transparent for ActiveRecord as it is now, but this change is important from the point of view of database optimization.
 
 ## Contributing
 
