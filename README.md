@@ -33,7 +33,7 @@ By adding migration:
 add_polymorphic_foreign_key :likes, :comments, column: :likeable
 ```
 
-PgMorph creates a partition table named `likes_comments` which inherits from `likes` table, sets foreign key on it and redirects all inserts to `likes` to this partition table if `likeable_type` is `Like`. It's done by using before insert trigger.
+PgMorph creates a partition table named `likes_comments` which inherits from `likes` table, sets foreign key on it and redirects all inserts to `likes` to this partition table if `likeable_type` is `Comment`. It's done by using before insert trigger.
 
 You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partitions.
 
