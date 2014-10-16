@@ -49,7 +49,7 @@ Because it means that whole partition table would be removed, you will be forbid
 
 ## Issues
 
-ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep while while using regular tables without some trick. In ideal situation there should be inly one insert to partition table, omitting main table, but than `id` of newly created record would become `nil` which would frustrate most of us. To preserve `id` of new record main table is not omitted, two records are being made and in after insert trigger duplicated record from master table is removed.
+ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep while using regular tables without some trick. In ideal situation there should be inly one insert to partition table, omitting main table, but than `id` of newly created record would become `nil` which would frustrate most of us. To preserve `id` of new record main table is not omitted, two records are being made and in after insert trigger duplicated record from master table is removed.
 
 ## Development plan
 
