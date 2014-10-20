@@ -51,7 +51,7 @@ describe PgMorph::Polymorphic do
       @comments_polymorphic.create_before_insert_trigger_sql.squeeze(' ').should == %Q{
       DROP TRIGGER IF EXISTS likes_likeable_insert_trigger ON likes;
       CREATE TRIGGER likes_likeable_insert_trigger
-        BEFORE INSERT ON likes
+        INSTEAD OF INSERT ON likes
         FOR EACH ROW EXECUTE PROCEDURE likes_likeable_fun();
       }.squeeze(' ')
     end
@@ -67,6 +67,7 @@ describe PgMorph::Polymorphic do
 
   describe 'remove_after_insert_trigger_sql' do
     it 'returns sql' do
+      pending "won't be used any more"
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
       @comments_polymorphic.remove_after_insert_trigger_sql.squeeze(' ').should == %Q{
@@ -76,6 +77,7 @@ describe PgMorph::Polymorphic do
     end
 
     it 'returns empty string if there are more partitions' do
+      pending "won't be used any more"
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
       @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
 

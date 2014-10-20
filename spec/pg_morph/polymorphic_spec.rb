@@ -31,7 +31,7 @@ describe PgMorph::Polymorphic do
         CHECK (baz_type = 'Bar'),
         PRIMARY KEY (id),
           FOREIGN KEY (baz_id) REFERENCES bars(id)
-      ) INHERITS (foos);
+      ) INHERITS (foos_base);
       }.squeeze(' ')
     end
   end

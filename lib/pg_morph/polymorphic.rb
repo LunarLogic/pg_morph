@@ -1,3 +1,4 @@
+require 'pry'
 module PgMorph
 
   class Polymorphic
@@ -15,19 +16,37 @@ module PgMorph
       raise PgMorph::Exception.new("Column not specified") unless @column_name
     end
 
+    def rename_base_table_sql
+      return '' if ActiveRecord::Base.connection.table_exists? base_table
+      %Q{
+        ALTER TABLE #{parent_table} RENAME TO #{base_table};
+      }
+    end
+
+    def create_base_table_view_sql
+      %Q{
+        CREATE OR REPLACE VIEW #{parent_table} AS SELECT * FROM #{base_table};
+      }
+    end
+
     def create_proxy_table_sql
       %Q{
       CREATE TABLE #{proxy_table} (
         CHECK (#{column_name_type} = '#{type}'),
         PRIMARY KEY (id),
         FOREIGN KEY (#{column_name_id}) REFERENCES #{child_table}(id)
-      ) INHERITS (#{parent_table});
+      ) INHERITS (#{base_table});
       }
     end
 
     def create_before_insert_trigger_fun_sql
       before_insert_trigger_content do
-        create_trigger_body.strip
+        %Q{
+        IF NEW.id IS NULL THEN
+          NEW.id := nextval('#{parent_table}_id_seq');
+        END IF;
+        #{create_trigger_body.strip}
+        }
       end
     end
 
@@ -35,7 +54,7 @@ module PgMorph
       fun_name = before_insert_fun_name
       trigger_name = before_insert_trigger_name
 
-      create_trigger_sql(parent_table, trigger_name, fun_name, 'BEFORE INSERT')
+      create_trigger_sql(parent_table, trigger_name, fun_name, 'INSTEAD OF INSERT')
     end
 
     def create_after_insert_trigger_sql
