@@ -1,13 +1,16 @@
 module PgMorph
 
   class Polymorphic
+    BASE_TABLE_SUFIX = :base
+
     include PgMorph::Naming
-    attr_reader :parent_table, :child_table, :column_name
+    attr_reader :parent_table, :child_table, :column_name, :base_table
 
     def initialize(parent_table, child_table, options)
       @parent_table = parent_table
       @child_table = child_table
       @column_name = options[:column]
+      @base_table = options[:base_table] || :"#{parent_table}_#{BASE_TABLE_SUFIX}"
 
       raise PgMorph::Exception.new("Column not specified") unless @column_name
     end

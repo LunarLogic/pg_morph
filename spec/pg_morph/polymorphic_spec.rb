@@ -13,6 +13,17 @@ describe PgMorph::Polymorphic do
 
   it { expect(@polymorphic.child_table).to eq(:bars) }
 
+  describe "#base_table" do
+    it "sets default base table" do
+      expect(@polymorphic.base_table).to eq(:foos_base)
+    end
+
+    it "sets base table with options" do
+      polymorphic = PgMorph::Polymorphic.new(:foos, :bars, column: :baz, base_table: :base)
+      expect(polymorphic.base_table).to eq(:base)
+    end
+  end
+
   describe '#create_proxy_table_sql' do
     it do
       @polymorphic.create_proxy_table_sql.squeeze(' ').should == %Q{
