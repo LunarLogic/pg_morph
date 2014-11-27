@@ -24,9 +24,22 @@ describe PgMorph::Polymorphic do
     end
   end
 
+  describe '#rename_base_table_sql' do
+    it 'returns proper sql if there is no base table yet' do
+      expect(@polymorphic.rename_base_table_sql.squeeze(' ')).to eq %Q{
+        ALTER TABLE foos RENAME TO foos_base;
+      }.squeeze(' ')
+    end
+
+    it 'returns empty string if base table exists' do
+      expect(ActiveRecord::Base.connection).to receive(:table_exists?).and_return(true)
+      expect(@polymorphic.rename_base_table_sql.squeeze(' ')).to eq ''
+    end
+  end
+
   describe '#create_proxy_table_sql' do
-    it do
-      @polymorphic.create_proxy_table_sql.squeeze(' ').should == %Q{
+    it 'generates proper sql' do
+      expect(@polymorphic.create_proxy_table_sql.squeeze(' ')).to eq %Q{
       CREATE TABLE foos_bars (
         CHECK (baz_type = 'Bar'),
         PRIMARY KEY (id),
@@ -37,8 +50,8 @@ describe PgMorph::Polymorphic do
   end
 
   describe '#create_before_insert_trigger_fun_sql' do
-    it '' do
-      @polymorphic.should_receive(:before_insert_trigger_content)
+    it 'generates proper sql' do
+      expect(@polymorphic).to receive(:before_insert_trigger_content)
 
       @polymorphic.create_before_insert_trigger_fun_sql
     end
@@ -54,7 +67,7 @@ describe PgMorph::Polymorphic do
   end
 
   describe '#before_insert_trigger_content' do
-    it '' do
+    it 'generate proper sql' do
       @polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ').should == %Q{
       CREATE OR REPLACE FUNCTION foos_baz_fun() RETURNS TRIGGER AS $$
         BEGIN

@@ -49,10 +49,13 @@ describe PgMorph::Adapter do
     end
   end
 
-  describe 'assertions to a partition' do
-    it 'works properly' do
-      # new record inserted correctly
+  describe 'operations on a partition' do
+    before do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+    end
+
+    it 'creates records' do
+      # new record inserted correctly
       comment = Comment.create(content: 'comment')
       like = Like.create(likeable: comment)
 
@@ -66,6 +69,21 @@ describe PgMorph::Adapter do
 
       expect(Like.count).to eq(2)
       expect(like2.id).to eq(Like.last.id)
+    end
+
+    it 'updates records' do
+      comment = Comment.create(content: 'comment')
+      comment2 = Comment.create(content: 'comment2')
+      like = Like.create(likeable: comment)
+
+      like.reload
+      expect(like.likeable).to eq(comment)
+
+      like.likeable = comment2
+      like.save
+
+      like.reload
+      expect(like.likeable).to eq(comment2)
 
       # after removing partition row not inserted
       #like.destroy
