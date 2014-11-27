@@ -30,14 +30,14 @@ describe PgMorph::Polymorphic do
     it 'raises error for updating trigger with duplicated partition' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      -> { @comments_polymorphic.send(:create_trigger_body) }
-        .should raise_error PG::Error
+      expect { @comments_polymorphic.send(:create_trigger_body) }
+        .to raise_error PG::Error
     end
 
     it 'updates trigger with new partition' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      @posts_polymorphic.send(:create_trigger_body).squeeze(' ').should == %Q{
+      expect(@posts_polymorphic.send(:create_trigger_body).squeeze(' ')).to eq %Q{
         IF (NEW.likeable_type = 'Comment') THEN
           INSERT INTO likes_comments VALUES (NEW.*);
         ELSIF (NEW.likeable_type = 'Post') THEN
@@ -48,7 +48,7 @@ describe PgMorph::Polymorphic do
 
   describe '#create_before_insert_trigger_sql' do
     it 'returns sql' do
-      @comments_polymorphic.create_before_insert_trigger_sql.squeeze(' ').should == %Q{
+      expect(@comments_polymorphic.create_before_insert_trigger_sql.squeeze(' ')).to eq %Q{
       DROP TRIGGER IF EXISTS likes_likeable_insert_trigger ON likes;
       CREATE TRIGGER likes_likeable_insert_trigger
         INSTEAD OF INSERT ON likes
@@ -61,7 +61,7 @@ describe PgMorph::Polymorphic do
     it 'returns sql' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      @comments_polymorphic.remove_partition_table.squeeze(' ').should == %Q{ DROP TABLE IF EXISTS likes_comments; }
+      expect(@comments_polymorphic.remove_partition_table.squeeze(' ')).to eq %Q{ DROP TABLE IF EXISTS likes_comments; }
     end
   end
 

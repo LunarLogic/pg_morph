@@ -69,6 +69,23 @@ describe PgMorph::Adapter do
 
       expect(Like.count).to eq(2)
       expect(like2.id).to eq(Like.last.id)
+
+      #after removing partition row not inserted
+      like.destroy
+      expect(Like.count).to eq(1)
+      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      -> {  Like.create(likeable: comment) }
+        .should raise_error ActiveRecord::StatementInvalid
+
+      #if no partitions row inserted correctly
+      like2.destroy
+      expect(Like.count).to eq(0)
+      @adapter.remove_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+      like4 = Like.create(likeable: post)
+
+      expect(Like.count).to eq(1)
+      expect(like4.id).to eq(Like.last.id)
     end
 
     it 'updates records' do
@@ -84,23 +101,6 @@ describe PgMorph::Adapter do
 
       like.reload
       expect(like.likeable).to eq(comment2)
-
-      # after removing partition row not inserted
-      #like.destroy
-      #expect(Like.count).to eq(1)
-      #@adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-      #-> {  Like.create(likeable: comment) }
-        #.should raise_error ActiveRecord::StatementInvalid
-
-      # if no partitions row inserted correctly
-      #like2.destroy
-      #expect(Like.count).to eq(0)
-      #@adapter.remove_polymorphic_foreign_key(:likes, :posts, column: :likeable)
-      #like4 = Like.create(likeable: post)
-
-      #expect(Like.count).to eq(1)
-      #expect(like4.id).to eq(Like.last.id)
     end
   end
 

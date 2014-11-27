@@ -37,6 +37,14 @@ describe PgMorph::Polymorphic do
     end
   end
 
+  describe '#create_base_table_view_sql' do
+    it 'returns proper sql' do
+      expect(@polymorphic.create_base_table_view_sql).to eq %Q{
+        CREATE OR REPLACE VIEW foos AS SELECT * FROM foos_base;
+      }
+    end
+  end
+
   describe '#create_proxy_table_sql' do
     it 'generates proper sql' do
       expect(@polymorphic.create_proxy_table_sql.squeeze(' ')).to eq %Q{
@@ -59,7 +67,7 @@ describe PgMorph::Polymorphic do
 
   describe '#create_trigger_body' do
     it 'returns proper sql for new trigger' do
-      @polymorphic.send(:create_trigger_body).squeeze(' ').should == %Q{
+      expect(@polymorphic.send(:create_trigger_body).squeeze(' ')).to eq %Q{
       IF (NEW.baz_type = 'Bar') THEN
         INSERT INTO foos_bars VALUES (NEW.*);
       }.squeeze(' ')
@@ -68,7 +76,7 @@ describe PgMorph::Polymorphic do
 
   describe '#before_insert_trigger_content' do
     it 'generate proper sql' do
-      @polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ').should == %Q{
+      expect(@polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ')).to eq %Q{
       CREATE OR REPLACE FUNCTION foos_baz_fun() RETURNS TRIGGER AS $$
         BEGIN
           my block
@@ -83,7 +91,7 @@ describe PgMorph::Polymorphic do
 
   describe '#create_after_insert_trigger_fun_sql' do
     it do
-      @polymorphic.create_after_insert_trigger_fun_sql.squeeze(' ').should == %Q{
+      expect(@polymorphic.create_after_insert_trigger_fun_sql.squeeze(' ')).to eq %Q{
       CREATE OR REPLACE FUNCTION delete_from_foos_master_fun() RETURNS TRIGGER AS $$
       BEGIN
         DELETE FROM ONLY foos WHERE id = NEW.id;
@@ -95,7 +103,7 @@ describe PgMorph::Polymorphic do
 
   describe '#create_after_insert_trigger_sql' do
     it do
-      @polymorphic.create_after_insert_trigger_sql.squeeze(' ').should == %Q{
+      expect(@polymorphic.create_after_insert_trigger_sql.squeeze(' ')).to eq %Q{
       DROP TRIGGER IF EXISTS foos_after_insert_trigger ON foos;
       CREATE TRIGGER foos_after_insert_trigger
         AFTER INSERT ON foos
@@ -106,14 +114,14 @@ describe PgMorph::Polymorphic do
 
   describe '#remove_before_insert_trigger_sql' do
     it 'raise error if no function' do
-      -> { @polymorphic.remove_before_insert_trigger_sql }
-        .should raise_error PG::Error
+      expect { @polymorphic.remove_before_insert_trigger_sql }
+        .to raise_error PG::Error
     end
 
     it 'returns proper sql for single child table' do
       @polymorphic.stub(:get_function).with('foos_baz_fun').and_return('')
 
-      @polymorphic.remove_before_insert_trigger_sql.squeeze(' ').should == %Q{
+      expect(@polymorphic.remove_before_insert_trigger_sql.squeeze(' ')).to eq %Q{
         DROP TRIGGER foos_baz_insert_trigger ON foos;
         DROP FUNCTION foos_baz_fun();
         }.squeeze(' ')
