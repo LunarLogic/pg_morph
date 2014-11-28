@@ -57,20 +57,6 @@ module PgMorph
       create_trigger_sql(parent_table, trigger_name, fun_name, 'INSTEAD OF INSERT')
     end
 
-    def create_after_insert_trigger_sql
-      fun_name = after_insert_fun_name
-      trigger_name = after_insert_trigger_name
-
-      create_trigger_sql(parent_table, trigger_name, fun_name, 'AFTER INSERT')
-    end
-
-    def create_after_insert_trigger_fun_sql
-      fun_name = after_insert_fun_name
-      create_trigger_fun(fun_name) do
-        %Q{DELETE FROM ONLY #{parent_table} WHERE id = NEW.id;}
-      end
-    end
-
     def remove_before_insert_trigger_sql
       trigger_name = before_insert_trigger_name
       fun_name = before_insert_fun_name
@@ -98,18 +84,6 @@ module PgMorph
       else
         raise PG::Error.new("Partition table #{proxy_table} contains data.\nRemove them before if you want to drop that table.\n")
       end
-    end
-
-    def remove_after_insert_trigger_sql
-      prosrc = get_function(before_insert_fun_name)
-      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
-
-      return '' if cleared.present?
-      fun_name = after_insert_fun_name
-      trigger_name = after_insert_trigger_name
-
-      drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
     end
 
     private

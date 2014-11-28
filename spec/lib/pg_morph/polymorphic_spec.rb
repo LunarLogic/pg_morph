@@ -89,29 +89,6 @@ describe PgMorph::Polymorphic do
     end
   end
 
-  describe '#create_after_insert_trigger_fun_sql' do
-    it do
-      expect(@polymorphic.create_after_insert_trigger_fun_sql.squeeze(' ')).to eq %Q{
-      CREATE OR REPLACE FUNCTION delete_from_foos_master_fun() RETURNS TRIGGER AS $$
-      BEGIN
-        DELETE FROM ONLY foos WHERE id = NEW.id;
-        RETURN NEW;
-      END; $$ LANGUAGE plpgsql;
-      }.squeeze(' ')
-    end
-  end
-
-  describe '#create_after_insert_trigger_sql' do
-    it do
-      expect(@polymorphic.create_after_insert_trigger_sql.squeeze(' ')).to eq %Q{
-      DROP TRIGGER IF EXISTS foos_after_insert_trigger ON foos;
-      CREATE TRIGGER foos_after_insert_trigger
-        AFTER INSERT ON foos
-        FOR EACH ROW EXECUTE PROCEDURE delete_from_foos_master_fun();
-      }.squeeze(' ')
-    end
-  end
-
   describe '#remove_before_insert_trigger_sql' do
     it 'raise error if no function' do
       expect { @polymorphic.remove_before_insert_trigger_sql }

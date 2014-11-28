@@ -65,24 +65,4 @@ describe PgMorph::Polymorphic do
     end
   end
 
-  describe 'remove_after_insert_trigger_sql' do
-    it 'returns sql' do
-      pending "won't be used any more"
-      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-
-      @comments_polymorphic.remove_after_insert_trigger_sql.squeeze(' ').should == %Q{
-        DROP TRIGGER likes_after_insert_trigger ON likes;
-        DROP FUNCTION delete_from_likes_master_fun();
-        }.squeeze(' ')
-    end
-
-    it 'returns empty string if there are more partitions' do
-      pending "won't be used any more"
-      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-      @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
-
-      @comments_polymorphic.remove_after_insert_trigger_sql.squeeze(' ').should == ''
-    end
-  end
-
 end
