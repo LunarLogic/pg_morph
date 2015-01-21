@@ -37,7 +37,7 @@ By adding migration:
 add_polymorphic_foreign_key :likes, :comments, column: :likeable
 ```
 
-At first PgMorph wants to use table view instead of normal table as a master one. To prevent braking all potential relations with other tables it renames `likes` table to `likes_base` and then creates a view of `likes_base` with the name of `likes`.
+At first PgMorph wants to use `likes` table view instead of normal table as a master one. To prevent braking all potential relations with other tables it renames `likes` table to `likes_base` and then creates a view of `likes_base` with the name of `likes`.
 PgMorph then creates a partition table named `likes_comments` which inherits from `likes_base` table, sets foreign key on it and redirects all inserts to `likes` - since this is the table name AR knows aobut - to this partition table if `likeable_type` is `Comment`. It's done by using before insert trigger.
 
 You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partitions.
