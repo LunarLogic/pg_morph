@@ -50,57 +50,67 @@ describe PgMorph::Adapter do
   end
 
   describe 'operations on a partition' do
+    let(:comment) { Comment.create(content: 'comment') }
+    let(:post) { Post.create(content: 'content') }
+
     before do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+      @comment_like = Like.create(likeable: comment)
     end
 
-    it 'creates records' do
-      # new record inserted correctly
-      comment = Comment.create(content: 'comment')
-      like = Like.create(likeable: comment)
+    context "creating records" do
+      it "works with single partition" do
+        expect(Like.count).to eq(1)
+        expect(@comment_like.id).to eq(Like.last.id)
+      end
 
-      expect(Like.count).to eq(1)
-      expect(like.id).to eq(Like.last.id)
+      it "works with multiple partitions" do
+        @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+        post_like = Like.create(likeable: post)
 
-      # new record with more partition tables inserted correctly
-      @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
-      post = Post.create(content: 'content')
-      like2 = Like.create(likeable: post)
+        expect(Like.count).to eq(2)
+        expect(post_like.id).to eq(Like.last.id)
+      end
 
-      expect(Like.count).to eq(2)
-      expect(like2.id).to eq(Like.last.id)
+      it "raises error for a missing partition" do
+        -> {  Like.create(likeable: post) }
+          .should raise_error ActiveRecord::StatementInvalid
+      end
 
-      #after removing partition row not inserted
-      like.destroy
-      expect(Like.count).to eq(1)
-      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+      it "works if no partitions" do
+        @comment_like.destroy
+        expect(Like.count).to eq(0)
+        @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+        like = Like.create(likeable: post)
 
-      -> {  Like.create(likeable: comment) }
-        .should raise_error ActiveRecord::StatementInvalid
-
-      #if no partitions row inserted correctly
-      like2.destroy
-      expect(Like.count).to eq(0)
-      @adapter.remove_polymorphic_foreign_key(:likes, :posts, column: :likeable)
-      like4 = Like.create(likeable: post)
-
-      expect(Like.count).to eq(1)
-      expect(like4.id).to eq(Like.last.id)
+        expect(Like.count).to eq(1)
+        expect(like.id).to eq(Like.last.id)
+      end
     end
 
-    it 'updates records' do
-      comment = Comment.create(content: 'comment')
-      comment2 = Comment.create(content: 'comment2')
-      like = Like.create(likeable: comment)
+    context "updating records" do
+      let(:another_comment) { Comment.create(content: 'comment') }
 
-      like.reload
-      expect(like.likeable).to eq(comment)
+      before do
+        @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+      end
 
-      like.likeable = comment2
-      like.save
+      it 'works within one partition' do
+        expect(@comment_like.likeable).to eq(comment)
 
-      like.reload
-      expect(like.likeable).to eq(comment2)
+        @comment_like.likeable = another_comment
+        @comment_like.save
+
+        @comment_like.reload
+        expect(@comment_like.likeable).to eq(another_comment)
+      end
+
+      it 'does not allow to change associated type' do
+        expect(@comment_like.likeable).to eq(comment)
+
+        @comment_like.likeable = post
+        expect { @comment_like.save }.to raise_error ActiveRecord::StatementInvalid
+      end
     end
   end
 
