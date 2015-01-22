@@ -2,7 +2,7 @@ language: ruby
 rvm:
   - 2.1
 before_script:
-  - psql -c 'create database travis_ci_test;' -U postgres
+  - psql -c 'create database pg_morph_test;' -U postgres
 addons:
   postgresql: 9.3
 notifications:
