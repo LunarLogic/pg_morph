@@ -3,6 +3,9 @@ rvm:
   - 2.1
 before_script:
   - psql -c 'create database pg_morph_test;' -U postgres
+script:
+  - bundle exec rake db:migrate RAILS_ENV=test
+  - bundle exec rake
 addons:
   postgresql: 9.3
 notifications:
