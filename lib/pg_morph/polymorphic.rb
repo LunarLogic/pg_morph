@@ -79,12 +79,16 @@ module PgMorph
       cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
 
       if cleared.present?
-        cleared[0][0].sub!('ELSIF', 'IF')
-        before_insert_trigger_content do
-          cleared.map { |m| m[0] }.join('').strip
-        end
+        update_before_insert_trigger_sql(cleared)
       else
         drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
+      end
+    end
+
+    def update_before_insert_trigger_sql(cleared)
+      cleared[0][0].sub!('ELSIF', 'IF')
+      before_insert_trigger_content do
+        cleared.map { |m| m[0] }.join('').strip
       end
     end
 
@@ -122,19 +126,27 @@ module PgMorph
       prosrc = get_function(before_insert_fun_name)
 
       if prosrc
-        scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-        raise PG::Error.new("Condition for #{proxy_table} table already exists in trigger function") if scan[0][0].match proxy_table
-        %Q{
-          #{scan.map { |m| m[0] }.join.strip}
-          ELSIF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
-        }
+        update_existing_trigger_body(prosrc)
       else
-        %Q{
-          IF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
-        }
+        create_new_trigger_body
       end
+    end
+
+    def update_existing_trigger_body(prosrc)
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      raise PG::Error.new("Condition for #{proxy_table} table already exists in trigger function") if scan[0][0].match proxy_table
+      %Q{
+        #{scan.map { |m| m[0] }.join.strip}
+        ELSIF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+          INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
+      }
+    end
+
+    def create_new_trigger_body
+      %Q{
+        IF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+          INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
+      }
     end
 
     def create_trigger_sql(parent_table, trigger_name, fun_name, when_to_call)
