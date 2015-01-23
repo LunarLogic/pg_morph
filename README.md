@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/LunarLogic/gauguin.svg?branch=master)](https://travis-ci.org/LunarLogic/gauguin)
+[![Build Status](https://travis-ci.org/LunarLogic/pg_morph.svg?branch=view)](https://travis-ci.org/LunarLogic/pg_morph)
+[![Code Climate](https://codeclimate.com/github/LunarLogic/pg_morph/badges/gpa.svg)](https://codeclimate.com/github/LunarLogic/pg_morph)
+[![Test Coverage](https://codeclimate.com/github/LunarLogic/pg_morph/badges/coverage.svg)](https://codeclimate.com/github/LunarLogic/pg_morph)
 
 # PgMorph
 # ![PgMorph logo](docs/pg_morph.png)
