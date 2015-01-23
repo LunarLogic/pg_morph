@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/LunarLogic/gauguin.svg?branch=master)](https://travis-ci.org/LunarLogic/gauguin)
+
 # PgMorph
 # ![PgMorph logo](docs/pg_morph.png)
 

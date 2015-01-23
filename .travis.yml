@@ -5,7 +5,7 @@ before_script:
   - psql -c 'create database pg_morph_test;' -U postgres
 script:
   - bundle exec rake db:migrate RAILS_ENV=test
-  - bundle exec rake
+  - CODECLIMATE_REPO_TOKEN=60392238805181ab599e01b29566617c47bffed0083cbfd119aa3c230f9d611d bundle exec rake
 addons:
   postgresql: 9.3
 notifications:

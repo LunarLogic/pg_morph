@@ -39,8 +39,11 @@ GEM
     builder (3.0.4)
     celluloid (0.15.2)
       timers (~> 1.1.0)
+    codeclimate-test-reporter (0.4.6)
+      simplecov (>= 0.7.1, < 1.0.0)
     coderay (1.1.0)
     diff-lcs (1.2.5)
+    docile (1.1.5)
     erubis (2.7.0)
     ffi (1.9.3)
     formatador (0.2.4)
@@ -118,6 +121,11 @@ GEM
       rspec-core (~> 2.14.0)
       rspec-expectations (~> 2.14.0)
       rspec-mocks (~> 2.14.0)
+    simplecov (0.9.1)
+      docile (~> 1.1.0)
+      multi_json (~> 1.0)
+      simplecov-html (~> 0.8.0)
+    simplecov-html (0.8.0)
     slop (3.6.0)
     sprockets (2.2.2)
       hike (~> 1.2)
@@ -137,6 +145,7 @@ PLATFORMS
 
 DEPENDENCIES
   awesome_print (~> 1.2)
+  codeclimate-test-reporter
   guard-rspec
   pg (~> 0.17)
   pg_morph!
