@@ -17,7 +17,6 @@ describe PgMorph::Polymorphic do
       Like.destroy_all
       Comment.destroy_all
       @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-      @adapter.remove_polymorphic_foreign_key(:likes, :posts, column: :likeable)
     rescue
     end
   end
