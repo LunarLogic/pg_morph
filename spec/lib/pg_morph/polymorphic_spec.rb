@@ -32,7 +32,7 @@ describe PgMorph::Polymorphic do
     end
 
     it 'returns empty string if base table exists' do
-      expect(ActiveRecord::Base.connection).to receive(:table_exists?).and_return(true)
+      expect(@polymorphic).to receive(:can_rename_to_base_table?).and_return(false)
       expect(@polymorphic.rename_base_table_sql.squeeze(' ')).to eq ''
     end
   end

@@ -16,10 +16,22 @@ module PgMorph
     end
 
     def rename_base_table_sql
-      return '' if ActiveRecord::Base.connection.table_exists? base_table
+      return '' unless can_rename_to_base_table?
       %Q{
         ALTER TABLE #{parent_table} RENAME TO #{base_table};
       }
+    end
+
+    def can_rename_to_base_table?
+      return true unless ActiveRecord::Base.connection.table_exists? base_table
+
+      parent_table_set = ActiveRecord::Base.connection.columns(parent_table).
+                          map{|column| column.as_json.except('null')}
+      base_table_set = ActiveRecord::Base.connection.columns(base_table).
+                          map{|column| column.as_json.except('null')}
+
+      return false if parent_table_set == base_table_set
+      raise PgMorph::Exception.new('table name mismatch!')
     end
 
     def create_base_table_view_sql

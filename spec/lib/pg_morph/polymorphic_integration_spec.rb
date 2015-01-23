@@ -22,6 +22,29 @@ describe PgMorph::Polymorphic do
     end
   end
 
+  describe '#can_rename_to_base_table?' do
+    it 'returns true if base table does not exist' do
+      @adapter.stub(:table_exists?).with(@comments_polymorphic.base_table)
+        .and_return(false)
+
+      expect(@comments_polymorphic.can_rename_to_base_table?)
+        .to be_true
+    end
+
+    it 'returns false if there is compatible base table' do
+      @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+
+      expect(@comments_polymorphic.can_rename_to_base_table?)
+        .to be_false
+    end
+
+    it 'raises an exception if existing base table is not compatible table' do
+      @adapter.create_table(@comments_polymorphic.base_table)
+      expect { @comments_polymorphic.can_rename_to_base_table? }.
+        to raise_error PgMorph::Exception
+    end
+  end
+
   describe '#create_trigger_body' do
     before do
       @adapter.stub(:raise_unless_postgres)
