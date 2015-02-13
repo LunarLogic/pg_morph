@@ -39,6 +39,7 @@ describe PgMorph::Polymorphic do
 
     it 'raises an exception if existing base table is not compatible table' do
       @adapter.create_table(@comments_polymorphic.base_table)
+
       expect { @comments_polymorphic.can_rename_to_base_table? }.
         to raise_error PgMorph::Exception
     end

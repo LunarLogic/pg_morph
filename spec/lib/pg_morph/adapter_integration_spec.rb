@@ -32,14 +32,23 @@ describe PgMorph::Adapter do
   end
 
   describe '#add_polymorphic_foreign_key' do
+    it 'renames base table'
+    it 'creates base table view'
+
     it 'creates proxy table' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
       expect(@adapter.run('SELECT id FROM likes_comments')).to be_nil
     end
+
+    it 'creates before insert trigger fun'
+    it 'creates before insert trigger'
   end
 
   describe '#remove_polymorphic_foreign_key' do
+    it 'removes before insert trigger'
+    it 'removes before insert trigger fun'
+
     it 'removes proxy table' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
       expect(@adapter.run('SELECT id FROM likes_comments')).to be_nil
@@ -50,13 +59,16 @@ describe PgMorph::Adapter do
         .should raise_error ActiveRecord::StatementInvalid
     end
 
-    it 'prevents from removing partition with data' do
+    it 'prevents from removing proxy with data' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
       Like.create(likeable: comment)
 
       -> { @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable) }
         .should raise_error PG::Error
     end
+
+    it 'removes table view if empty'
+    it 'renames base table to original name'
   end
 
   describe 'operations on a partition' do
