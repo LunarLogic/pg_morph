@@ -112,6 +112,33 @@ describe PgMorph::Adapter do
         expect { @comment_like.save }.to raise_error ActiveRecord::StatementInvalid
       end
     end
+
+    context "deleting records" do
+      before do
+        expect(@adapter.run("SELECT id from likes where id = #{@comment_like.id}"))
+          .to eq @comment_like.id.to_s
+        expect(@adapter.run("SELECT id from likes_comments where id = #{@comment_like.id}"))
+          .to eq @comment_like.id.to_s
+        @comment_like.destroy
+      end
+
+      it "works on a partition" do
+        expect(@adapter.run("SELECT id from likes where id = #{@comment_like.id}")).to eq nil
+        expect(@adapter.run("SELECT id from likes_comments where id = #{@comment_like.id}")).to eq nil
+      end
+
+      context "after removing paritions" do
+        before do
+          @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+          @like = Like.create(likeable: comment)
+        end
+
+        it "works on a master table" do
+          @like.destroy
+          expect(@adapter.run("SELECT id from likes where id = #{@comment_like.id}")).to eq nil
+        end
+      end
+    end
   end
 
 end
