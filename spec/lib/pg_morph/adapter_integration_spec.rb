@@ -9,6 +9,8 @@ describe PgMorph::Adapter do
     end
   end
 
+  let(:comment) { Comment.create(content: 'comment') }
+
   before do
     @adapter = ActiveRecord::Base.connection
     @comments_polymorphic = PgMorph::Polymorphic.new(:likes, :comments, column: :likeable)
@@ -46,6 +48,14 @@ describe PgMorph::Adapter do
 
       -> { @adapter.run('SELECT id FROM likes_comments') }
         .should raise_error ActiveRecord::StatementInvalid
+    end
+
+    it 'prevents from removing partition with data' do
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+      Like.create(likeable: comment)
+
+      -> { @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable) }
+        .should raise_error PG::Error
     end
   end
 
