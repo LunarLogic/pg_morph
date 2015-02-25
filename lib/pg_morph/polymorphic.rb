@@ -92,7 +92,7 @@ module PgMorph
       end
     end
 
-    def remove_partition_table
+    def remove_proxy_table
       table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{parent_table}_#{child_table}").to_i.zero?
       if table_empty
         %Q{ DROP TABLE IF EXISTS #{proxy_table}; }

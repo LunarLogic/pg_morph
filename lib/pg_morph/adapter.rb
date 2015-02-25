@@ -22,7 +22,7 @@ module PgMorph
       polymorphic = PgMorph::Polymorphic.new(parent_table, child_table, options)
 
       sql = polymorphic.remove_before_insert_trigger_sql
-      sql << polymorphic.remove_partition_table
+      sql << polymorphic.remove_proxy_table
 
       execute(sql)
     end

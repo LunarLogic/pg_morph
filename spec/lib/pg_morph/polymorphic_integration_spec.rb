@@ -80,11 +80,11 @@ describe PgMorph::Polymorphic do
     end
   end
 
-  describe '#remove_partition_table' do
+  describe '#remove_proxy_table' do
     it 'returns sql' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      expect(@comments_polymorphic.remove_partition_table.squeeze(' ')).to eq %Q{ DROP TABLE IF EXISTS likes_comments; }
+      expect(@comments_polymorphic.remove_proxy_table.squeeze(' ')).to eq %Q{ DROP TABLE IF EXISTS likes_comments; }
     end
   end
 
