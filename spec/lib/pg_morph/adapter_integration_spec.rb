@@ -4,6 +4,14 @@ describe PgMorph::Adapter do
   ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
     include PgMorph::Adapter
 
+    def pg_views(name = nil)
+      query(%Q{
+        SELECT viewname
+        FROM pg_views
+        WHERE schemaname = ANY (current_schemas(false))
+      }, 'SCHEMA').map { |row| row[0] }
+    end
+
     def run(query)
       ActiveRecord::Base.connection.select_value(query)
     end
@@ -32,13 +40,32 @@ describe PgMorph::Adapter do
   end
 
   describe '#add_polymorphic_foreign_key' do
-    it 'renames base table'
-    it 'creates base table view'
+    it 'renames base table' do
+      expect(@adapter.tables).to include "likes"
+      expect(@adapter.tables).not_to include "likes_base"
 
-    it 'creates proxy table' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      expect(@adapter.run('SELECT id FROM likes_comments')).to be_nil
+      expect(@adapter.tables).not_to include "likes"
+      expect(@adapter.tables).to include "likes_base"
+    end
+
+    it 'creates base table view' do
+      expect(@adapter.pg_views).to be_empty
+      expect(@adapter.tables).to include "likes"
+
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.pg_views).to include "likes"
+      expect(@adapter.tables).not_to include "likes"
+    end
+
+    it 'creates proxy table' do
+      expect(@adapter.tables).not_to include "likes_comments"
+
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.tables).to include "likes_comments"
     end
 
     it 'creates before insert trigger fun'
@@ -46,28 +73,38 @@ describe PgMorph::Adapter do
   end
 
   describe '#remove_polymorphic_foreign_key' do
+    before do
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+    end
+
     it 'removes before insert trigger'
     it 'removes before insert trigger fun'
 
     it 'removes proxy table' do
-      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
-      expect(@adapter.run('SELECT id FROM likes_comments')).to be_nil
+      expect(@adapter.tables).to include "likes_comments"
 
       @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      -> { @adapter.run('SELECT id FROM likes_comments') }
-        .should raise_error ActiveRecord::StatementInvalid
+      expect(@adapter.tables).not_to include "likes_comments"
     end
 
     it 'prevents from removing proxy with data' do
-      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
       Like.create(likeable: comment)
 
       -> { @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable) }
         .should raise_error PG::Error
     end
 
-    it 'removes table view if empty'
+    xit 'removes table view if empty' do
+      expect(@adapter.tables).to include "likes"
+      expect(@adapter.tables).not_to include "likes"
+
+      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.pg_views).to include "likes"
+      expect(@adapter.pg_views).to be_empty
+    end
+
     it 'renames base table to original name'
   end
 
