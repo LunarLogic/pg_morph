@@ -23,6 +23,8 @@ module PgMorph
 
       sql = polymorphic.remove_before_insert_trigger_sql
       sql << polymorphic.remove_proxy_table
+      sql << polymorphic.remove_base_table_view_sql
+      sql << polymorphic.rename_base_table_back_sql
 
       execute(sql)
     end

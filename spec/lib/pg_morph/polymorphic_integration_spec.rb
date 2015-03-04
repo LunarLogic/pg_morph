@@ -80,11 +80,45 @@ describe PgMorph::Polymorphic do
     end
   end
 
+  describe '#remove_before_insert_trigger_sql' do
+    it 'returns proper sql if more partitions' do
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+      @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+
+      expect(@comments_polymorphic.remove_before_insert_trigger_sql.squeeze(' ')).to eq %Q{
+      CREATE OR REPLACE FUNCTION likes_likeable_fun() RETURNS TRIGGER AS $$
+      BEGIN
+      IF (NEW.#{@posts_polymorphic.column_name}_type = 'Post') THEN
+      INSERT INTO #{@posts_polymorphic.parent_table}_#{@posts_polymorphic.child_table} VALUES (NEW.*);
+      ELSE
+      RAISE EXCEPTION 'Wrong "#{@posts_polymorphic.column_name}_type"="%" used. Create proper partition table and update likes_likeable_fun function', NEW.likeable_type;
+      END IF;
+      RETURN NEW;
+      END; $$ LANGUAGE plpgsql;
+      }.squeeze(' ')
+    end
+  end
+
   describe '#remove_proxy_table' do
     it 'returns sql' do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
       expect(@comments_polymorphic.remove_proxy_table.squeeze(' ')).to eq %Q{ DROP TABLE IF EXISTS likes_comments; }
+    end
+  end
+
+  describe '#remove_base_table_view_sql' do
+    it 'returns proper sql if no more partitions' do
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@comments_polymorphic.remove_base_table_view_sql.squeeze(' ')).to eq %Q{ DROP VIEW likes; }
+    end
+
+    it 'returns empty string if there are more partitions' do
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+      @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+
+      expect(@comments_polymorphic.remove_base_table_view_sql.squeeze(' ')).to eq ''
     end
   end
 

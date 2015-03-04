@@ -104,4 +104,5 @@ describe PgMorph::Polymorphic do
         }.squeeze(' ')
     end
   end
+
 end

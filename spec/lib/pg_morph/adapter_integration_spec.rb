@@ -95,17 +95,39 @@ describe PgMorph::Adapter do
         .should raise_error PG::Error
     end
 
-    xit 'removes table view if empty' do
-      expect(@adapter.tables).to include "likes"
+    it 'removes table view if empty' do
+      expect(@adapter.pg_views).to include "likes"
       expect(@adapter.tables).not_to include "likes"
 
       @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
 
-      expect(@adapter.pg_views).to include "likes"
       expect(@adapter.pg_views).to be_empty
     end
 
-    it 'renames base table to original name'
+    it 'renames base table to original name' do
+      expect(@adapter.pg_views).to include "likes"
+      expect(@adapter.tables).not_to include "likes"
+
+      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.tables).to include "likes"
+    end
+
+    context 'with more than one partitions' do
+      before do
+        @adapter.add_polymorphic_foreign_key(:likes, :posts, column: :likeable)
+      end
+
+      it 'does not rename base table to original name' do
+        expect(@adapter.pg_views).to include "likes"
+        expect(@adapter.tables).not_to include "likes"
+
+        @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+        expect(@adapter.tables).not_to include "likes"
+        expect(@adapter.pg_views).to include "likes"
+      end
+    end
   end
 
   describe 'operations on a partition' do
