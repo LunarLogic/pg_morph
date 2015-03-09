@@ -71,7 +71,7 @@ module PgMorph
     def remove_before_insert_trigger_sql
       trigger_name = before_insert_trigger_name
       fun_name = before_insert_fun_name
-      cleared = check_before_remove
+      cleared = check_more_partitions
 
       if cleared.present?
         update_before_insert_trigger_sql(cleared)
@@ -97,9 +97,7 @@ module PgMorph
     end
 
     def remove_base_table_view_sql
-      cleared = check_before_remove
-
-      if cleared.present?
+      if check_more_partitions.present?
         ''
       else
         %Q{ DROP VIEW #{parent_table}; }
@@ -107,9 +105,7 @@ module PgMorph
     end
 
     def rename_base_table_back_sql
-      cleared = check_before_remove
-
-      if cleared.present?
+      if check_more_partitions.present?
         ''
       else
         %Q{ ALTER TABLE #{base_table} RENAME TO #{parent_table}; }
@@ -118,14 +114,14 @@ module PgMorph
 
     private
 
-    def check_before_remove
+    def check_more_partitions
       fun_name = before_insert_fun_name
 
       prosrc = get_function(fun_name)
       raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
 
       scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
+      scan.reject { |x| x[0].match("#{proxy_table}") }
     end
 
     def create_trigger_fun(fun_name, &block)
