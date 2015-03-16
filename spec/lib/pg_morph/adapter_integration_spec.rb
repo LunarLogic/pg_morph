@@ -68,8 +68,27 @@ describe PgMorph::Adapter do
       expect(@adapter.tables).to include "likes_comments"
     end
 
-    it 'creates before insert trigger fun'
-    it 'creates before insert trigger'
+    it 'creates before insert trigger fun' do
+      fun_name = @comments_polymorphic.before_insert_fun_name
+      expect(@adapter.run("select proname from pg_proc where proname = '#{fun_name}'")).
+        to be nil
+
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.run("select proname from pg_proc where proname = '#{fun_name}'")).
+        to eq fun_name
+    end
+
+    it 'creates before insert trigger' do
+      trigger_name = @comments_polymorphic.before_insert_trigger_name
+      expect(@adapter.query("SELECT * FROM pg_trigger WHERE tgname = '#{trigger_name}'")).
+        to be_empty
+
+      @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.query("SELECT count(*) FROM pg_trigger WHERE tgname = '#{trigger_name}'")).
+        to eq [["1"]]
+    end
   end
 
   describe '#remove_polymorphic_foreign_key' do
@@ -77,8 +96,27 @@ describe PgMorph::Adapter do
       @adapter.add_polymorphic_foreign_key(:likes, :comments, column: :likeable)
     end
 
-    it 'removes before insert trigger'
-    it 'removes before insert trigger fun'
+    it 'removes before insert trigger' do
+      fun_name = @comments_polymorphic.before_insert_fun_name
+      expect(@adapter.run("select proname from pg_proc where proname = '#{fun_name}'")).
+        to eq fun_name
+
+      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.run("select proname from pg_proc where proname = '#{fun_name}'")).
+        to be nil
+    end
+
+    it 'removes before insert trigger fun' do
+      trigger_name = @comments_polymorphic.before_insert_trigger_name
+      expect(@adapter.query("SELECT count(*) FROM pg_trigger WHERE tgname = '#{trigger_name}'")).
+        to eq [["1"]]
+
+      @adapter.remove_polymorphic_foreign_key(:likes, :comments, column: :likeable)
+
+      expect(@adapter.query("SELECT * FROM pg_trigger WHERE tgname = '#{trigger_name}'")).
+        to be_empty
+    end
 
     it 'removes proxy table' do
       expect(@adapter.tables).to include "likes_comments"
