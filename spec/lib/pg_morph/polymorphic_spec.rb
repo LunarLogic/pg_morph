@@ -13,21 +13,53 @@ describe PgMorph::Polymorphic do
 
   it { expect(@polymorphic.child_table).to eq(:bars) }
 
+  describe "#base_table" do
+    it "sets default base table" do
+      expect(@polymorphic.base_table).to eq(:foos_base)
+    end
+
+    it "sets base table with options" do
+      polymorphic = PgMorph::Polymorphic.new(:foos, :bars, column: :baz, base_table: :base)
+      expect(polymorphic.base_table).to eq(:base)
+    end
+  end
+
+  describe '#rename_base_table_sql' do
+    it 'returns proper sql if there is no base table yet' do
+      expect(@polymorphic.rename_base_table_sql.squeeze(' ')).to eq %Q{
+        ALTER TABLE foos RENAME TO foos_base;
+      }.squeeze(' ')
+    end
+
+    it 'returns empty string if base table exists' do
+      expect(@polymorphic).to receive(:can_rename_to_base_table?).and_return(false)
+      expect(@polymorphic.rename_base_table_sql.squeeze(' ')).to eq ''
+    end
+  end
+
+  describe '#create_base_table_view_sql' do
+    it 'returns proper sql' do
+      expect(@polymorphic.create_base_table_view_sql).to eq %Q{
+        CREATE OR REPLACE VIEW foos AS SELECT * FROM foos_base;
+      }
+    end
+  end
+
   describe '#create_proxy_table_sql' do
-    it do
-      @polymorphic.create_proxy_table_sql.squeeze(' ').should == %Q{
+    it 'generates proper sql' do
+      expect(@polymorphic.create_proxy_table_sql.squeeze(' ')).to eq %Q{
       CREATE TABLE foos_bars (
         CHECK (baz_type = 'Bar'),
         PRIMARY KEY (id),
           FOREIGN KEY (baz_id) REFERENCES bars(id)
-      ) INHERITS (foos);
+      ) INHERITS (foos_base);
       }.squeeze(' ')
     end
   end
 
   describe '#create_before_insert_trigger_fun_sql' do
-    it '' do
-      @polymorphic.should_receive(:before_insert_trigger_content)
+    it 'generates proper sql' do
+      expect(@polymorphic).to receive(:before_insert_trigger_content)
 
       @polymorphic.create_before_insert_trigger_fun_sql
     end
@@ -35,7 +67,7 @@ describe PgMorph::Polymorphic do
 
   describe '#create_trigger_body' do
     it 'returns proper sql for new trigger' do
-      @polymorphic.send(:create_trigger_body).squeeze(' ').should == %Q{
+      expect(@polymorphic.send(:create_trigger_body).squeeze(' ')).to eq %Q{
       IF (NEW.baz_type = 'Bar') THEN
         INSERT INTO foos_bars VALUES (NEW.*);
       }.squeeze(' ')
@@ -43,8 +75,8 @@ describe PgMorph::Polymorphic do
   end
 
   describe '#before_insert_trigger_content' do
-    it '' do
-      @polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ').should == %Q{
+    it 'generate proper sql' do
+      expect(@polymorphic.send(:before_insert_trigger_content) { 'my block' }.squeeze(' ')).to eq %Q{
       CREATE OR REPLACE FUNCTION foos_baz_fun() RETURNS TRIGGER AS $$
         BEGIN
           my block
@@ -57,42 +89,20 @@ describe PgMorph::Polymorphic do
     end
   end
 
-  describe '#create_after_insert_trigger_fun_sql' do
-    it do
-      @polymorphic.create_after_insert_trigger_fun_sql.squeeze(' ').should == %Q{
-      CREATE OR REPLACE FUNCTION delete_from_foos_master_fun() RETURNS TRIGGER AS $$
-      BEGIN
-        DELETE FROM ONLY foos WHERE id = NEW.id;
-        RETURN NEW;
-      END; $$ LANGUAGE plpgsql;
-      }.squeeze(' ')
-    end
-  end
-
-  describe '#create_after_insert_trigger_sql' do
-    it do
-      @polymorphic.create_after_insert_trigger_sql.squeeze(' ').should == %Q{
-      DROP TRIGGER IF EXISTS foos_after_insert_trigger ON foos;
-      CREATE TRIGGER foos_after_insert_trigger
-        AFTER INSERT ON foos
-        FOR EACH ROW EXECUTE PROCEDURE delete_from_foos_master_fun();
-      }.squeeze(' ')
-    end
-  end
-
   describe '#remove_before_insert_trigger_sql' do
     it 'raise error if no function' do
-      -> { @polymorphic.remove_before_insert_trigger_sql }
-        .should raise_error PG::Error
+      expect { @polymorphic.remove_before_insert_trigger_sql }
+        .to raise_error PG::Error
     end
 
     it 'returns proper sql for single child table' do
       @polymorphic.stub(:get_function).with('foos_baz_fun').and_return('')
 
-      @polymorphic.remove_before_insert_trigger_sql.squeeze(' ').should == %Q{
+      expect(@polymorphic.remove_before_insert_trigger_sql.squeeze(' ')).to eq %Q{
         DROP TRIGGER foos_baz_insert_trigger ON foos;
         DROP FUNCTION foos_baz_fun();
         }.squeeze(' ')
     end
   end
+
 end

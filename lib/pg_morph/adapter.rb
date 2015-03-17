@@ -7,11 +7,11 @@ module PgMorph
 
       polymorphic = PgMorph::Polymorphic.new(parent_table, child_table, options)
 
-      sql = polymorphic.create_proxy_table_sql
+      sql =  polymorphic.rename_base_table_sql
+      sql << polymorphic.create_base_table_view_sql
+      sql << polymorphic.create_proxy_table_sql
       sql << polymorphic.create_before_insert_trigger_fun_sql
       sql << polymorphic.create_before_insert_trigger_sql
-      sql << polymorphic.create_after_insert_trigger_fun_sql
-      sql << polymorphic.create_after_insert_trigger_sql
 
       execute(sql)
     end
@@ -22,8 +22,9 @@ module PgMorph
       polymorphic = PgMorph::Polymorphic.new(parent_table, child_table, options)
 
       sql = polymorphic.remove_before_insert_trigger_sql
-      sql << polymorphic.remove_partition_table
-      sql << polymorphic.remove_after_insert_trigger_sql
+      sql << polymorphic.remove_proxy_table
+      sql << polymorphic.remove_base_table_view_sql
+      sql << polymorphic.rename_base_table_back_sql
 
       execute(sql)
     end

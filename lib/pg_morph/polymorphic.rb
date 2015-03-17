@@ -1,15 +1,43 @@
 module PgMorph
 
   class Polymorphic
+    BASE_TABLE_SUFIX = :base
+
     include PgMorph::Naming
-    attr_reader :parent_table, :child_table, :column_name
+    attr_reader :parent_table, :child_table, :column_name, :base_table
 
     def initialize(parent_table, child_table, options)
       @parent_table = parent_table
       @child_table = child_table
       @column_name = options[:column]
+      @base_table = options[:base_table] || :"#{parent_table}_#{BASE_TABLE_SUFIX}"
 
       raise PgMorph::Exception.new("Column not specified") unless @column_name
+    end
+
+    def rename_base_table_sql
+      return '' unless can_rename_to_base_table?
+      %Q{
+        ALTER TABLE #{parent_table} RENAME TO #{base_table};
+      }
+    end
+
+    def can_rename_to_base_table?
+      return true unless ActiveRecord::Base.connection.table_exists? base_table
+
+      parent_table_set = ActiveRecord::Base.connection.columns(parent_table).
+                          map{|column| column.as_json.except('null')}
+      base_table_set = ActiveRecord::Base.connection.columns(base_table).
+                          map{|column| column.as_json.except('null')}
+
+      return false if parent_table_set == base_table_set
+      raise PgMorph::Exception.new('table name mismatch!')
+    end
+
+    def create_base_table_view_sql
+      %Q{
+        CREATE OR REPLACE VIEW #{parent_table} AS SELECT * FROM #{base_table};
+      }
     end
 
     def create_proxy_table_sql
@@ -18,13 +46,18 @@ module PgMorph
         CHECK (#{column_name_type} = '#{type}'),
         PRIMARY KEY (id),
         FOREIGN KEY (#{column_name_id}) REFERENCES #{child_table}(id)
-      ) INHERITS (#{parent_table});
+      ) INHERITS (#{base_table});
       }
     end
 
     def create_before_insert_trigger_fun_sql
       before_insert_trigger_content do
-        create_trigger_body.strip
+        %Q{
+        IF NEW.id IS NULL THEN
+          NEW.id := nextval('#{parent_table}_id_seq');
+        END IF;
+        #{create_trigger_body.strip}
+        }
       end
     end
 
@@ -32,44 +65,29 @@ module PgMorph
       fun_name = before_insert_fun_name
       trigger_name = before_insert_trigger_name
 
-      create_trigger_sql(parent_table, trigger_name, fun_name, 'BEFORE INSERT')
-    end
-
-    def create_after_insert_trigger_sql
-      fun_name = after_insert_fun_name
-      trigger_name = after_insert_trigger_name
-
-      create_trigger_sql(parent_table, trigger_name, fun_name, 'AFTER INSERT')
-    end
-
-    def create_after_insert_trigger_fun_sql
-      fun_name = after_insert_fun_name
-      create_trigger_fun(fun_name) do
-        %Q{DELETE FROM ONLY #{parent_table} WHERE id = NEW.id;}
-      end
+      create_trigger_sql(parent_table, trigger_name, fun_name, 'INSTEAD OF INSERT')
     end
 
     def remove_before_insert_trigger_sql
       trigger_name = before_insert_trigger_name
       fun_name = before_insert_fun_name
-
-      prosrc = get_function(fun_name)
-      raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
-
-      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
+      cleared = check_more_partitions
 
       if cleared.present?
-        cleared[0][0].sub!('ELSIF', 'IF')
-        before_insert_trigger_content do
-          cleared.map { |m| m[0] }.join('').strip
-        end
+        update_before_insert_trigger_sql(cleared)
       else
         drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
       end
     end
 
-    def remove_partition_table
+    def update_before_insert_trigger_sql(cleared)
+      cleared[0][0].sub!('ELSIF', 'IF')
+      before_insert_trigger_content do
+        cleared.map { |m| m[0] }.join('').strip
+      end
+    end
+
+    def remove_proxy_table
       table_empty = ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM #{parent_table}_#{child_table}").to_i.zero?
       if table_empty
         %Q{ DROP TABLE IF EXISTS #{proxy_table}; }
@@ -78,19 +96,33 @@ module PgMorph
       end
     end
 
-    def remove_after_insert_trigger_sql
-      prosrc = get_function(before_insert_fun_name)
-      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-      cleared = scan.reject { |x| x[0].match("#{proxy_table}") }
+    def remove_base_table_view_sql
+      if check_more_partitions.present?
+        ''
+      else
+        %Q{ DROP VIEW #{parent_table}; }
+      end
+    end
 
-      return '' if cleared.present?
-      fun_name = after_insert_fun_name
-      trigger_name = after_insert_trigger_name
-
-      drop_trigger_and_fun_sql(trigger_name, parent_table, fun_name)
+    def rename_base_table_back_sql
+      if check_more_partitions.present?
+        ''
+      else
+        %Q{ ALTER TABLE #{base_table} RENAME TO #{parent_table}; }
+      end
     end
 
     private
+
+    def check_more_partitions
+      fun_name = before_insert_fun_name
+
+      prosrc = get_function(fun_name)
+      raise PG::Error.new("There is no such function #{fun_name}()\n") unless prosrc
+
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      scan.reject { |x| x[0].match("#{proxy_table}") }
+    end
 
     def create_trigger_fun(fun_name, &block)
       %Q{
@@ -115,19 +147,27 @@ module PgMorph
       prosrc = get_function(before_insert_fun_name)
 
       if prosrc
-        scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
-        raise PG::Error.new("Condition for #{proxy_table} table already exists in trigger function") if scan[0][0].match proxy_table
-        %Q{
-          #{scan.map { |m| m[0] }.join.strip}
-          ELSIF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
-        }
+        update_existing_trigger_body(prosrc)
       else
-        %Q{
-          IF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
-            INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
-        }
+        create_new_trigger_body
       end
+    end
+
+    def update_existing_trigger_body(prosrc)
+      scan =  prosrc.scan(/(( +(ELS)?IF.+\n)(\s+INSERT INTO.+;\n))/)
+      raise PG::Error.new("Condition for #{proxy_table} table already exists in trigger function") if scan[0][0].match proxy_table
+      %Q{
+        #{scan.map { |m| m[0] }.join.strip}
+        ELSIF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+          INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
+      }
+    end
+
+    def create_new_trigger_body
+      %Q{
+        IF (NEW.#{column_name}_type = '#{child_table.to_s.singularize.camelize}') THEN
+          INSERT INTO #{parent_table}_#{child_table} VALUES (NEW.*);
+      }
     end
 
     def create_trigger_sql(parent_table, trigger_name, fun_name, when_to_call)

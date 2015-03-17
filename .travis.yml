@@ -1,0 +1,13 @@
+language: ruby
+rvm:
+  - 2.1
+before_script:
+  - psql -c 'create database pg_morph_test;' -U postgres
+script:
+  - bundle exec rake db:migrate RAILS_ENV=test
+  - CODECLIMATE_REPO_TOKEN=eea5d3a27cd1d650820991099a63350c518c039de9cb654fb2c32261fc6370cd bundle exec rake
+addons:
+  postgresql: 9.3
+notifications:
+  email:
+    - hanka@lunarlogic.io

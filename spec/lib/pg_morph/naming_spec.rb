@@ -22,8 +22,4 @@ describe PgMorph::Naming do
 
   it { expect(@fake.before_insert_trigger_name).to eq('foos_baz_insert_trigger') }
 
-  it { expect(@fake.after_insert_fun_name).to eq('delete_from_foos_master_fun') }
-
-  it { expect(@fake.after_insert_trigger_name).to eq('foos_after_insert_trigger') }
-
 end

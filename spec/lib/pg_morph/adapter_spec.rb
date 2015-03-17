@@ -3,15 +3,6 @@ require 'spec_helper'
 describe PgMorph::Adapter do
   class FakeAdapter
     include PgMorph::Adapter
-
-    def execute(sql, name = nil)
-      sql_statements << sql
-      sql
-    end
-
-    def sql_statements
-      @sql_statements || []
-    end
   end
 
   before do

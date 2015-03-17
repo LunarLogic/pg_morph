@@ -1,7 +1,15 @@
+[![Build Status](https://travis-ci.org/LunarLogic/pg_morph.svg?branch=view)](https://travis-ci.org/LunarLogic/pg_morph)
+[![Code Climate](https://codeclimate.com/github/LunarLogic/pg_morph/badges/gpa.svg)](https://codeclimate.com/github/LunarLogic/pg_morph)
+[![Test Coverage](https://codeclimate.com/github/LunarLogic/pg_morph/badges/coverage.svg)](https://codeclimate.com/github/LunarLogic/pg_morph)
+
 # PgMorph
 # ![PgMorph logo](docs/pg_morph.png)
 
 PgMorph gives you a way to handle DB consistency for polymorphic relations and is based on postgreSQL inheritance and partitioning features.
+
+## Requirements
+
+postgresql >= 9.2
 
 ## Installation
 
@@ -33,7 +41,8 @@ By adding migration:
 add_polymorphic_foreign_key :likes, :comments, column: :likeable
 ```
 
-PgMorph creates a partition table named `likes_comments` which inherits from `likes` table, sets foreign key on it and redirects all inserts to `likes` to this partition table if `likeable_type` is `Comment`. It's done by using before insert trigger.
+At first PgMorph wants to use `likes` table view instead of normal table as a master one. To prevent braking all potential relations with other tables it renames `likes` table to `likes_base` and then creates a view of `likes_base` named `likes`.
+PgMorph then creates a partition table named `likes_comments` which inherits from `likes_base` table, sets foreign key on it and redirects all inserts to `likes` - since this is the table name AR knows aobut - to this partition table if `likeable_type` is `Comment`. It's done by using before insert trigger.
 
 You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partitions.
 
@@ -47,13 +56,14 @@ remove_polymorphic_foreign_key :likes, :comments, column: :likeable
 
 Because it means that whole partition table would be removed, you will be forbidden to do that if partition table contains any data.
 
-## Issues
+## Caveats
 
-ActiveRecord uses `INSERT ... RETURNING id` query which was impossible to keep while using regular tables without some trick. In ideal situation there should be inly one insert to partition table, omitting main table, but than `id` of newly created record would become `nil` which would frustrate most of us. To preserve `id` of new record main table is not omitted, two records are being made and in after insert trigger duplicated record from master table is removed.
+While updating records check constraints which are set on each partition does not allow to change association type, so if in examplary model some like is for a comment, it can't be reassigned to a post, postgres will raise an exception.
 
 ## Development plan
 
-To avoid extra database operations with deleting duplicated records view of main table is going to be used. Possibly at the beginning it won't be as transparent for ActiveRecord as it is now, but this change is important from the point of view of database optimization.
+- support moving records between partitions while updating relation type
+- your suggestions?
 
 ## Contributing
 
