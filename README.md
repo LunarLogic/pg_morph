@@ -41,7 +41,7 @@ By adding migration:
 add_polymorphic_foreign_key :likes, :comments, column: :likeable
 ```
 
-At first PgMorph wants to use `likes` table view instead of normal table as a master one. To prevent braking all potential relations with other tables it renames `likes` table to `likes_base` and then creates a view of `likes_base` with the name of `likes`.
+At first PgMorph wants to use `likes` table view instead of normal table as a master one. To prevent braking all potential relations with other tables it renames `likes` table to `likes_base` and then creates a view of `likes_base` named `likes`.
 PgMorph then creates a partition table named `likes_comments` which inherits from `likes_base` table, sets foreign key on it and redirects all inserts to `likes` - since this is the table name AR knows aobut - to this partition table if `likeable_type` is `Comment`. It's done by using before insert trigger.
 
 You will have to add polymorphic foreign key on all related tables and each time new relation is added, before insert trigger function will be updated to reflect all defined relations and redirect new records to proper partitions.
@@ -56,13 +56,14 @@ remove_polymorphic_foreign_key :likes, :comments, column: :likeable
 
 Because it means that whole partition table would be removed, you will be forbidden to do that if partition table contains any data.
 
-## Issues
+## Caveats
 
-While updating records check constraints which are set on each partition does not allow to change association type, so if in examplary model some like is for a comment, it can't be assigned to a post, postgres will raise an exception.
+While updating records check constraints which are set on each partition does not allow to change association type, so if in examplary model some like is for a comment, it can't be reassigned to a post, postgres will raise an exception.
 
 ## Development plan
 
-- support moving records between partitions while updating relation type.
+- support moving records between partitions while updating relation type
+- your suggestions?
 
 ## Contributing
 
