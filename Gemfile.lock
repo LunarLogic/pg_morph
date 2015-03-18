@@ -145,11 +145,11 @@ PLATFORMS
 
 DEPENDENCIES
   awesome_print (~> 1.2)
-  codeclimate-test-reporter
-  guard-rspec
+  codeclimate-test-reporter (~> 0.4)
+  guard-rspec (~> 4.2)
   pg (~> 0.17)
   pg_morph!
   pry (~> 0.10)
   rails (~> 3)
   rake (~> 10.3)
-  rspec-rails
+  rspec-rails (~> 2.14)
