@@ -1,7 +1,7 @@
 module PgMorph
 
   class Polymorphic
-    BASE_TABLE_SUFIX = :base
+    BASE_TABLE_SUFFIX = :base
 
     include PgMorph::Naming
     attr_reader :parent_table, :child_table, :column_name, :base_table
@@ -10,7 +10,7 @@ module PgMorph
       @parent_table = parent_table
       @child_table = child_table
       @column_name = options[:column]
-      @base_table = options[:base_table] || :"#{parent_table}_#{BASE_TABLE_SUFIX}"
+      @base_table = options[:base_table] || :"#{parent_table}_#{BASE_TABLE_SUFFIX}"
 
       raise PgMorph::Exception.new("Column not specified") unless @column_name
     end
